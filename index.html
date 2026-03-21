@@ -4230,7 +4230,7 @@ async function requestPlaceChange() {
   renderLoggedIn();
 }
 
-
+function showToast(msg) {
   const t = document.getElementById('toast');
   if (!t) return;
   t.textContent = msg;
