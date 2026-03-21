@@ -1,0 +1,2765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Mage Association</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=IM+Fell+English:ital@0;1&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   CSS VARIABLES — easy to modify
+═══════════════════════════════════════════════ */
+:root {
+  --parchment:      #f2ead6;
+  --parchment-dark: #e8ddc0;
+  --parchment-deep: #d9cca8;
+  --parchment-aged: #c8b98a;
+  --green-deep:     #3d5c30;
+  --green-mid:      #5c7a45;
+  --green-light:    #7a9e5e;
+  --gold:           #a67c2e;
+  --gold-light:     #c49a3c;
+  --gold-bright:    #dbb84a;
+  --brown-dark:     #2e1f0a;
+  --brown-mid:      #5c3d18;
+  --brown-light:    #8c6030;
+  --ink:            #1e1508;
+  --ink-mid:        #3a2c14;
+  --ink-light:      #6b5230;
+  --cream-border:   rgba(166,124,46,0.28);
+  --shadow:         rgba(30,21,8,0.18);
+  --tab-h:          52px;
+  --header-h:       90px;
+  --font-display:   'Cinzel', serif;
+  --font-body:      'Cormorant Garamond', serif;
+  --font-italic:    'IM Fell English', serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+/* ── scrollbar ── */
+::-webkit-scrollbar { width:8px; }
+::-webkit-scrollbar-track { background:var(--parchment-dark); }
+::-webkit-scrollbar-thumb { background:var(--green-mid); border-radius:4px; border:1px solid var(--gold); }
+
+html, body {
+  height:100%; min-height:100vh;
+  background: var(--parchment);
+  background-image:
+    url("data:image/svg+xml,%3Csvg width='400' height='400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:17px;
+  overflow-x:hidden;
+}
+
+/* ══════════════════════════════
+   LAUREL DECORATIONS
+══════════════════════════════ */
+.laurel-bar {
+  width:100%; display:flex; align-items:center;
+  justify-content:center; gap:0; pointer-events:none;
+  line-height:1; overflow:hidden;
+}
+.laurel-bar svg { display:block; }
+
+/* laurel inline beside headings */
+.laurel-inline {
+  display:inline-flex; align-items:center; gap:0.5rem;
+  vertical-align:middle;
+}
+
+/* header laurel strip along bottom edge */
+.header-laurel {
+  position:absolute; bottom:-1px; left:0; right:0;
+  height:18px; pointer-events:none; z-index:1;
+  display:flex; align-items:flex-end; justify-content:center;
+  overflow:hidden;
+}
+
+/* section title laurel wrapper */
+.section-title-inner {
+  display:flex; align-items:center; gap:0.8rem;
+}
+
+
+/* ══════════════════════════════
+   HEADER
+══════════════════════════════ */
+#site-header {
+  position:fixed; top:0; left:0; right:0; z-index:200;
+  height:var(--header-h);
+  background: linear-gradient(180deg, #2e1f0a 0%, #3d5c30 60%, #4a6e38 100%);
+  border-bottom:3px solid var(--gold);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 2rem;
+  box-shadow:0 4px 24px rgba(0,0,0,0.35);
+  overflow:visible;
+}
+
+.header-crest {
+  display:flex; align-items:center; gap:1rem;
+}
+
+.crest-emblem {
+  width:52px; height:52px;
+  border:2px solid var(--gold);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,0.3);
+  font-size:1.5rem;
+  box-shadow:0 0 12px rgba(212,160,23,0.4);
+  flex-shrink:0;
+}
+
+.header-title-block { line-height:1.1; }
+.header-title {
+  font-family:var(--font-display);
+  font-size:1.05rem;
+  font-weight:700;
+  color:var(--gold-bright);
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  text-shadow:0 0 20px rgba(240,192,64,0.5);
+}
+.header-subtitle {
+  font-family:var(--font-italic);
+  font-style:italic;
+  font-size:0.72rem;
+  color:rgba(240,192,64,0.65);
+  letter-spacing:0.12em;
+}
+
+/* profile area */
+#profile-area {
+  display:flex; align-items:center; gap:0.8rem;
+  cursor:pointer;
+  padding:0.5rem 1rem;
+  border:1px solid rgba(212,160,23,0.35);
+  border-radius:4px;
+  transition:all 0.2s;
+  position:relative;
+}
+#profile-area:hover { background:rgba(212,160,23,0.1); border-color:var(--gold-light); }
+
+.profile-avatar {
+  width:38px; height:38px;
+  border-radius:50%;
+  background:linear-gradient(135deg, var(--green-mid), var(--green-deep));
+  border:2px solid var(--gold);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-display);
+  font-size:0.9rem;
+  color:var(--gold-bright);
+  font-weight:700;
+}
+.profile-info { text-align:right; }
+.profile-name {
+  font-family:var(--font-display);
+  font-size:0.75rem;
+  color:var(--gold-bright);
+  letter-spacing:0.1em;
+}
+.profile-rank {
+  font-family:var(--font-italic);
+  font-style:italic;
+  font-size:0.65rem;
+  color:rgba(240,192,64,0.7);
+}
+.profile-place {
+  font-size:0.6rem;
+  color:rgba(240,192,64,0.5);
+  letter-spacing:0.05em;
+}
+.profile-badge {
+  position:absolute; top:-5px; right:-5px;
+  background:#c0392b; color:#fff;
+  font-size:0.5rem; font-family:var(--font-display);
+  padding:1px 5px; border-radius:10px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+}
+
+.btn-login {
+  font-family:var(--font-display);
+  font-size:0.65rem;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--gold-bright);
+  background:transparent;
+  border:1px solid var(--gold);
+  padding:0.4rem 1rem;
+  border-radius:3px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.btn-login:hover { background:rgba(212,160,23,0.2); }
+
+/* ══════════════════════════════
+   TAB NAVIGATION (tome style)
+══════════════════════════════ */
+#tab-nav {
+  position:fixed;
+  top:var(--header-h);
+  left:0; right:0;
+  z-index:190;
+  height:var(--tab-h);
+  background:var(--parchment-dark);
+  border-bottom:2px solid var(--gold);
+  display:flex; align-items:flex-end;
+  padding:0 1.5rem;
+  gap:0;
+  box-shadow:0 2px 12px var(--shadow);
+  overflow-x:auto;
+  /* subtle laurel repeat along top edge via box-shadow */
+  border-top:1px solid rgba(184,134,11,0.25);
+  position:relative;
+}
+#tab-nav::-webkit-scrollbar { height:0; }
+/* thin gold + green rule above tabs */
+#tab-nav::before {
+  content:'';
+  position:absolute; top:0; left:0; right:0; height:3px;
+  background: repeating-linear-gradient(90deg,
+    transparent 0px, transparent 36px,
+    #5a7a4a 36px, #5a7a4a 38px,
+    transparent 38px, transparent 42px,
+    #b8860b 42px, #b8860b 44px,
+    transparent 44px, transparent 80px
+  );
+  opacity:0.45;
+}
+
+.tab-btn {
+  font-family:var(--font-display);
+  font-size:0.58rem;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--ink-light);
+  background:var(--parchment-deep);
+  border:1px solid var(--cream-border);
+  border-bottom:none;
+  padding:0.55rem 1.2rem;
+  cursor:pointer;
+  transition:all 0.18s;
+  border-radius:4px 4px 0 0;
+  white-space:nowrap;
+  margin-right:3px;
+  position:relative;
+  top:1px;
+  min-width:fit-content;
+}
+.tab-btn:hover { color:var(--green-mid); border-color:var(--gold); background:var(--parchment); }
+.tab-btn.active {
+  background:var(--parchment);
+  color:var(--green-deep);
+  border-color:var(--gold);
+  border-bottom:2px solid var(--parchment);
+  font-weight:700;
+}
+.tab-btn.admin-tab { color:var(--gold); }
+.tab-btn.admin-tab.active { color:var(--gold-light); }
+
+/* ══════════════════════════════
+   MAIN CONTENT AREA
+══════════════════════════════ */
+#main-content {
+  margin-top:calc(var(--header-h) + var(--tab-h));
+  min-height:calc(100vh - var(--header-h) - var(--tab-h));
+  padding:2rem;
+  position:relative; z-index:1;
+}
+
+/* ══════════════════════════════
+   PAGE PANELS (hidden/shown)
+══════════════════════════════ */
+.page-panel { display:none; }
+.page-panel.active { display:block; }
+
+/* ══════════════════════════════
+   SECTION HEADINGS
+══════════════════════════════ */
+.section-title {
+  font-family:var(--font-display);
+  font-size:1.5rem;
+  color:var(--green-deep);
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  border-bottom:2px solid var(--gold);
+  padding-bottom:0.5rem;
+  margin-bottom:1.5rem;
+  display:flex; align-items:center; gap:0.7rem;
+  position:relative;
+}
+.section-title .ornament { color:var(--gold); font-size:1rem; }
+
+/* laurel sprig flanking section titles */
+.section-title::before,
+.section-title::after {
+  content:'';
+  display:inline-block;
+  width:38px; height:20px;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 38 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2,18 Q19,6 36,14' stroke='%23b8860b' stroke-width='1'/%3E%3Cpath d='M8,16 C6,10 2,7 0,9 C3,13 6,15 8,16Z' fill='%235a7a4a'/%3E%3Cpath d='M16,11 C14,5 10,2 8,4 C11,8 14,10 16,11Z' fill='%235a7a4a'/%3E%3Cpath d='M24,9 C22,3 18,0 16,2 C19,6 22,8 24,9Z' fill='%235a7a4a'/%3E%3Cpath d='M32,12 C30,6 26,3 24,5 C27,9 30,11 32,12Z' fill='%235a7a4a'/%3E%3Ccircle cx='12' cy='12' r='1.5' fill='%23d4a017'/%3E%3Ccircle cx='22' cy='9' r='1.5' fill='%23d4a017'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-size:contain;
+  flex-shrink:0;
+  opacity:0.8;
+}
+.section-title::after { transform:scaleX(-1); }
+
+.section-subtitle {
+  font-family:var(--font-italic);
+  font-style:italic;
+  color:var(--ink-light);
+  font-size:1rem;
+  margin-bottom:1.5rem;
+  margin-top:-1rem;
+}
+
+/* ══════════════════════════════
+   HOT TOPICS PAGE
+══════════════════════════════ */
+.hot-topics-controls {
+  display:flex; gap:1rem; align-items:center; margin-bottom:1.5rem;
+  flex-wrap:wrap;
+}
+
+.search-box {
+  display:flex; align-items:center; gap:0.5rem;
+  background:var(--parchment-dark);
+  border:1px solid var(--cream-border);
+  border-radius:4px;
+  padding:0.4rem 0.8rem;
+  flex:1; min-width:200px;
+}
+.search-box input {
+  background:transparent; border:none; outline:none;
+  font-family:var(--font-body); font-size:0.95rem;
+  color:var(--ink); width:100%;
+}
+.search-box input::placeholder { color:var(--ink-light); font-style:italic; }
+.search-icon { color:var(--gold); font-size:0.9rem; }
+
+.filter-select {
+  font-family:var(--font-display);
+  font-size:0.6rem;
+  letter-spacing:0.1em;
+  color:var(--ink-mid);
+  background:var(--parchment-dark);
+  border:1px solid var(--cream-border);
+  padding:0.4rem 0.8rem;
+  border-radius:4px;
+  cursor:pointer;
+  text-transform:uppercase;
+}
+
+/* paper card */
+.paper-card {
+  background:var(--parchment-dark);
+  border:1px solid var(--cream-border);
+  border-left:4px solid var(--green-mid);
+  border-radius:4px;
+  padding:1.1rem 1.4rem 1.1rem 1.4rem;
+  margin-bottom:1rem;
+  display:flex; align-items:flex-start; gap:1rem;
+  transition:all 0.2s;
+  cursor:pointer;
+  position:relative;
+}
+.paper-card:hover {
+  border-left-color:var(--gold);
+  box-shadow:0 4px 16px var(--shadow);
+  transform:translateX(2px);
+}
+.paper-card.pending { border-left-color:#c0392b; }
+
+.paper-points-badge {
+  position:absolute;
+  bottom:0.7rem; right:0.9rem;
+  background:transparent;
+  color:var(--ink-light);
+  font-family:var(--font-display);
+  font-size:0.5rem;
+  font-weight:400;
+  letter-spacing:0.08em;
+  border:none;
+  padding:0;
+}
+
+.paper-card-body { flex:1; }
+.paper-card-title {
+  font-family:var(--font-display);
+  font-size:0.9rem;
+  color:var(--green-deep);
+  letter-spacing:0.06em;
+  margin-bottom:0.3rem;
+}
+.paper-card-meta {
+  font-family:var(--font-italic);
+  font-style:italic;
+  font-size:0.8rem;
+  color:var(--ink-light);
+  margin-bottom:0.5rem;
+}
+.paper-card-tags { display:flex; gap:0.4rem; flex-wrap:wrap; }
+.paper-tag {
+  font-family:var(--font-display);
+  font-size:0.5rem;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  padding:2px 7px;
+  border-radius:2px;
+  border:1px solid var(--cream-border);
+  color:var(--ink-light);
+}
+.paper-tag.pending-tag { color:#c0392b; border-color:#c0392b; }
+.paper-tag.reviewed-tag { color:var(--green-mid); border-color:var(--green-mid); }
+
+.paper-card-actions {
+  display:flex; flex-direction:column; gap:0.4rem; align-items:flex-end; flex-shrink:0;
+}
+
+.recommend-btn {
+  font-family:var(--font-display);
+  font-size:0.5rem;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--gold);
+  background:transparent;
+  border:1px solid var(--cream-border);
+  padding:0.3rem 0.7rem;
+  border-radius:3px;
+  cursor:pointer;
+  transition:all 0.18s;
+  white-space:nowrap;
+}
+.recommend-btn:hover { background:rgba(212,160,23,0.15); border-color:var(--gold); }
+.recommend-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.rec-count { font-size:0.6rem; color:var(--ink-light); text-align:right; }
+
+/* ══════════════════════════════
+   ART-DECO ORNAMENTAL DIVIDER
+══════════════════════════════ */
+.ornament-divider {
+  display:flex; align-items:center; justify-content:center;
+  margin:0.6rem 0 1.4rem; width:100%;
+  pointer-events:none; overflow:hidden;
+}
+.ornament-divider svg { display:block; max-width:600px; width:100%; }
+
+/* corner flourishes */
+.corner-flourish {
+  position:fixed; pointer-events:none; z-index:2;
+  width:120px; height:120px;
+  opacity:0.18;
+}
+.corner-flourish.tl { top:calc(var(--header-h) + var(--tab-h)); left:0; }
+.corner-flourish.tr { top:calc(var(--header-h) + var(--tab-h)); right:0; transform:scaleX(-1); }
+.corner-flourish.bl { bottom:0; left:0; transform:scaleY(-1); }
+.corner-flourish.br { bottom:0; right:0; transform:scale(-1,-1); }
+
+/* ══════════════════════════════
+   ART-DECO ORNAMENTAL DIVIDER
+══════════════════════════════ */
+.ornament-divider {
+  display:flex; align-items:center; justify-content:center;
+  margin:1.2rem 0; gap:0; width:100%;
+  pointer-events:none;
+}
+.ornament-divider svg { display:block; }
+
+/* ══════════════════════════════
+   LIBRARY — FLOOR TABS + BOOKCASE
+══════════════════════════════ */
+.library-outer { display:flex; flex-direction:column; gap:0; }
+
+.floor-tabs {
+  display:flex; gap:3px; flex-wrap:nowrap;
+  overflow-x:auto; padding-bottom:0; scrollbar-width:none;
+}
+.floor-tabs::-webkit-scrollbar { display:none; }
+
+.floor-tab-btn {
+  font-family:var(--font-display); font-size:0.55rem;
+  letter-spacing:0.12em; text-transform:uppercase;
+  color:var(--ink-light); background:var(--parchment-dark);
+  border:1px solid var(--cream-border); border-bottom:none;
+  border-radius:4px 4px 0 0; padding:0.5rem 1.1rem 0.6rem;
+  cursor:pointer; transition:all 0.18s; white-space:nowrap; flex-shrink:0;
+}
+.floor-tab-btn:hover { color:var(--green-deep); border-color:var(--gold); background:var(--parchment); }
+.floor-tab-btn.active {
+  background:#1c0e05; color:var(--gold-bright);
+  border-color:#6a4020; border-bottom:1px solid #1c0e05;
+  z-index:2; position:relative;
+}
+.floor-tab-btn.locked { opacity:0.38; cursor:not-allowed; }
+.floor-tab-tier {
+  display:block; font-size:0.42rem; opacity:0.6; margin-top:2px;
+  font-family:var(--font-italic); font-style:italic; text-transform:none; letter-spacing:0;
+}
+
+.floor-panel { display:none; }
+.floor-panel.active { display:block; }
+
+/* ── Bookcase wrapper ── */
+.bookcase {
+  position:relative;
+  background:
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 28px,
+      rgba(255,255,255,0.008) 28px, rgba(255,255,255,0.008) 29px
+    ),
+    linear-gradient(180deg, #1c0e05 0%, #2a1608 100%);
+  border:2px solid #6a4020;
+  border-top:3px solid #8a5828;
+  border-radius:0 3px 5px 5px;
+  padding:10px 0 8px;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.65), inset 0 2px 6px rgba(0,0,0,0.5);
+  /* scrollable vertically */
+  max-height:72vh;
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-width:thin;
+  scrollbar-color:#6a4020 #1c0e05;
+}
+.bookcase::-webkit-scrollbar { width:8px; }
+.bookcase::-webkit-scrollbar-track { background:#1c0e05; }
+.bookcase::-webkit-scrollbar-thumb { background:#6a4020; border-radius:4px; border:1px solid #8a5828; }
+
+/* fixed side panels via pseudo — don't scroll */
+.bookcase-sides {
+  position:sticky; top:0; left:0; right:0; height:0;
+  pointer-events:none; z-index:20;
+}
+.bookcase-sides::before {
+  content:''; position:absolute; left:0; top:-10px; height:200vh; width:18px;
+  background:linear-gradient(90deg,#261408 0%,#3a1e0a 60%,#2a1408 100%);
+  border-right:1px solid rgba(255,255,255,0.05);
+  box-shadow:inset -3px 0 8px rgba(0,0,0,0.4);
+}
+.bookcase-sides::after {
+  content:''; position:absolute; right:0; top:-10px; height:200vh; width:18px;
+  background:linear-gradient(90deg,#2a1408 0%,#3a1e0a 40%,#261408 100%);
+  border-left:1px solid rgba(255,255,255,0.05);
+  box-shadow:inset 3px 0 8px rgba(0,0,0,0.4);
+}
+
+.bookcase-inner { padding:0 18px; }
+
+/* ── One shelf row ── */
+.bookshelf {
+  padding:8px 4px 0; position:relative; margin-bottom:2px;
+}
+.shelf-plank {
+  height:16px;
+  background:linear-gradient(180deg,
+    #b07840 0%, #8a5a28 15%, #6e4418 45%, #5a3410 75%, #3c2008 100%);
+  margin:0 -4px;
+  box-shadow:
+    0 6px 14px rgba(0,0,0,0.75),
+    inset 0 3px 0 rgba(255,255,255,0.10),
+    inset 0 1px 0 rgba(255,200,100,0.08),
+    inset 0 -2px 0 rgba(0,0,0,0.5);
+  position:relative;
+}
+.shelf-plank::before {
+  content:''; position:absolute; top:4px; left:0; right:0; height:1px;
+  background:rgba(255,220,120,0.06);
+}
+.shelf-plank::after {
+  content:''; position:absolute; bottom:3px; left:0; right:0; height:1px;
+  background:rgba(0,0,0,0.3);
+}
+
+/* row of books on one shelf */
+.shelf-books {
+  display:flex; align-items:flex-end; gap:1px;
+  padding:0 2px; min-height:124px;
+  flex-wrap:nowrap; overflow-x:visible;
+}
+
+/* ── Book spine (realistic) ── */
+.book-spine {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:space-between;
+  cursor:pointer; border-radius:1px 2px 0 0;
+  position:relative; flex-shrink:0; overflow:hidden;
+  transition:transform 0.2s cubic-bezier(.15,0,.2,1), box-shadow 0.2s, filter 0.2s;
+  /* subtle page texture on right edge */
+  box-shadow: inset -1px 0 0 rgba(240,220,180,0.12);
+}
+.book-spine:hover {
+  transform:translateY(-18px) scaleX(1.03);
+  box-shadow:
+    4px 0 20px rgba(0,0,0,0.8),
+    -2px 0 10px rgba(0,0,0,0.5),
+    inset -1px 0 0 rgba(240,220,180,0.2);
+  filter:brightness(1.12);
+  z-index:20;
+}
+/* cloth/leather texture overlay */
+.book-spine::before {
+  content:''; position:absolute; inset:0;
+  background:repeating-linear-gradient(
+    160deg,
+    rgba(255,255,255,0) 0px, rgba(255,255,255,0) 3px,
+    rgba(255,255,255,0.025) 3px, rgba(255,255,255,0.025) 4px
+  );
+  z-index:1; pointer-events:none;
+}
+/* light left edge — spine highlight */
+.book-spine::after {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
+  background:linear-gradient(90deg,
+    rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 60%, transparent 100%);
+  z-index:2;
+}
+/* raised band decoration on spine */
+.book-band {
+  position:absolute; left:0; right:0; z-index:3; pointer-events:none;
+}
+.book-band-top    { top:14%; height:3px; background:rgba(0,0,0,0.25); box-shadow:0 1px 0 rgba(255,255,255,0.07); }
+.book-band-bottom { bottom:14%; height:3px; background:rgba(0,0,0,0.25); box-shadow:0 1px 0 rgba(255,255,255,0.07); }
+
+.book-spine-title {
+  writing-mode:vertical-rl; transform:rotate(180deg);
+  font-family:var(--font-display); font-size:0.46rem;
+  letter-spacing:0.18em; text-transform:uppercase;
+  color:rgba(255,255,255,0.92); text-shadow:0 1px 5px rgba(0,0,0,0.9);
+  padding:0.6rem 0.2rem; flex:1;
+  display:flex; align-items:center; justify-content:center;
+  position:relative; z-index:4; overflow:hidden;
+}
+.book-spine-author {
+  font-family:var(--font-italic); font-style:italic; font-size:0.34rem;
+  color:rgba(220,180,80,0.8); padding-bottom:0.35rem;
+  letter-spacing:0.05em; position:relative; z-index:4;
+  text-align:center; overflow:hidden; max-width:100%;
+  text-shadow:0 1px 3px rgba(0,0,0,0.8);
+}
+/* gold title label on spine */
+.book-label {
+  position:absolute; left:3px; right:3px; z-index:5; pointer-events:none;
+  top:50%; transform:translateY(-50%);
+  background:rgba(180,130,20,0.18);
+  border-top:1px solid rgba(200,160,40,0.3);
+  border-bottom:1px solid rgba(200,160,40,0.3);
+  padding:2px 0;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* locked */
+.book-tier-locked {
+  background:linear-gradient(160deg,#2a2218,#1a1408) !important;
+  opacity:0.32; cursor:not-allowed !important;
+}
+/* add slot */
+.book-add-slot {
+  background:transparent !important;
+  border:1px dashed rgba(166,124,46,0.25) !important;
+  opacity:0.45; cursor:pointer; box-shadow:none !important;
+}
+.book-add-slot::before, .book-add-slot::after { display:none; }
+.book-add-slot:hover {
+  opacity:1 !important; border-color:var(--gold) !important;
+  transform:translateY(-10px) !important; filter:none !important;
+  background:rgba(166,124,46,0.08) !important;
+}
+.book-add-slot .book-spine-title { color:var(--gold) !important; font-size:0.9rem !important; letter-spacing:0 !important; }
+.book-add-slot .book-spine-author { color:var(--gold-light) !important; }
+
+.empty-shelf-label {
+  font-family:var(--font-italic); font-style:italic;
+  color:rgba(200,160,80,0.28); font-size:0.78rem;
+  padding:0 1rem; align-self:center;
+}
+
+.library-main { width:100%; }
+
+
+
+.spell-book-view {
+  display:none;
+  position:fixed;
+  top:0; left:0; right:0; bottom:0;
+  z-index:500;
+  background:rgba(22,14,6,0.82);
+  backdrop-filter:blur(4px);
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:1.5rem;
+}
+.spell-book-view.open { display:flex; }
+
+/* The book container */
+.spell-book-container {
+  display:flex;
+  width:100%; max-width:1100px;
+  height:100%; max-height:720px;
+  position:relative;
+  filter:drop-shadow(0 20px 60px rgba(0,0,0,0.7));
+}
+
+/* Close button — inside top-right corner of right page */
+.btn-close-book {
+  position:absolute;
+  top:1rem; right:1.2rem;
+  font-family:var(--font-display);
+  font-size:0.55rem;
+  letter-spacing:0.15em;
+  color:var(--ink-light);
+  background:rgba(200,180,130,0.3);
+  border:1px solid var(--cream-border);
+  padding:0.3rem 0.8rem;
+  border-radius:3px;
+  cursor:pointer;
+  transition:all 0.18s;
+  text-transform:uppercase;
+  z-index:10;
+}
+.btn-close-book:hover { color:var(--ink); border-color:var(--ink-light); background:rgba(200,180,130,0.5); }
+
+/* Book title bar */
+.spell-book-topbar { display:none; }
+
+/* Left page */
+.spell-page-left {
+  flex:1;
+  background: linear-gradient(90deg,
+    #d4c89a 0%, #e8ddb8 6%, #f0e8cc 15%, #f5f0dc 100%
+  );
+  border-radius:6px 0 0 6px;
+  padding:2.5rem 2rem 2rem 2.5rem;
+  display:flex; flex-direction:column; align-items:center;
+  overflow-y:auto;
+  position:relative;
+  box-shadow:inset -8px 0 20px rgba(0,0,0,0.12);
+  border:1px solid #b8a060;
+  border-right:none;
+}
+/* aged paper vignette */
+.spell-page-left::before {
+  content:'';
+  position:absolute; inset:0;
+  background:radial-gradient(ellipse at 20% 50%, transparent 60%, rgba(100,70,20,0.08) 100%);
+  pointer-events:none; border-radius:6px 0 0 6px;
+}
+
+/* Right page */
+.spell-page-right {
+  flex:1;
+  background: linear-gradient(90deg,
+    #f2ecd8 0%, #f5f0dc 85%, #e8ddb0 94%, #d4c88e 100%
+  );
+  border-radius:0 6px 6px 0;
+  padding:2.5rem 2.5rem 2rem 2rem;
+  overflow-y:auto;
+  position:relative;
+  border:1px solid #b8a060;
+  border-left:none;
+}
+.spell-page-right::before {
+  content:'';
+  position:absolute; inset:0;
+  background:radial-gradient(ellipse at 80% 50%, transparent 60%, rgba(100,70,20,0.08) 100%);
+  pointer-events:none; border-radius:0 6px 6px 0;
+}
+
+/* Spine between pages */
+.book-spine-divider {
+  width:28px; flex-shrink:0;
+  background:linear-gradient(90deg,
+    #8c6c2a 0%, #6a500a 20%, #4a3808 50%, #6a500a 80%, #8c6c2a 100%
+  );
+  position:relative;
+  box-shadow:inset 2px 0 6px rgba(0,0,0,0.4), inset -2px 0 6px rgba(0,0,0,0.4);
+  border-top:1px solid #b8a060;
+  border-bottom:1px solid #b8a060;
+}
+.book-spine-divider::before {
+  content:'';
+  position:absolute; left:50%; top:5%; bottom:5%;
+  width:1px; transform:translateX(-50%);
+  background:linear-gradient(180deg, transparent, rgba(220,180,80,0.3) 20%, rgba(220,180,80,0.3) 80%, transparent);
+}
+
+/* Page ruling lines */
+.spell-page-left::after, .spell-page-right::after {
+  content:'';
+  position:absolute; left:2.5rem; right:2rem; top:4rem; bottom:2rem;
+  background-image:repeating-linear-gradient(
+    180deg, transparent, transparent 27px,
+    rgba(166,124,46,0.07) 27px, rgba(166,124,46,0.07) 28px
+  );
+  pointer-events:none;
+}
+
+.page-number {
+  font-family:var(--font-display);
+  font-size:0.52rem;
+  letter-spacing:0.2em;
+  color:var(--ink-light);
+  text-transform:uppercase;
+  margin-bottom:1.2rem;
+  text-align:center;
+  opacity:0.6;
+  align-self:center;
+}
+
+.spell-title-display {
+  font-family:var(--font-display);
+  font-size:1.35rem;
+  color:var(--green-deep);
+  letter-spacing:0.12em;
+  text-align:center;
+  margin-bottom:0.3rem;
+  width:100%;
+  position:relative; z-index:1;
+}
+.spell-title-display::after {
+  content:'';
+  display:block;
+  width:60%; margin:0.5rem auto 0;
+  height:1px;
+  background:linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+.spell-circle-frame {
+  width:100%; max-width:340px;
+  aspect-ratio:1;
+  border:1px solid var(--cream-border);
+  border-radius:50%;
+  background:rgba(240,232,200,0.5);
+  display:flex; align-items:center; justify-content:center;
+  margin:1rem auto 1.2rem;
+  overflow:hidden;
+  position:relative; z-index:1;
+  box-shadow:0 2px 12px rgba(0,0,0,0.1), inset 0 0 20px rgba(100,70,20,0.06);
+}
+.spell-circle-placeholder {
+  text-align:center;
+  color:var(--ink-light);
+  font-family:var(--font-italic);
+  font-style:italic;
+  font-size:0.85rem;
+  padding:1rem;
+}
+
+.spell-stats-grid {
+  width:100%; max-width:340px;
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:0.4rem;
+  position:relative; z-index:1;
+}
+.spell-stat-item {
+  background:rgba(200,180,130,0.2);
+  border:1px solid var(--cream-border);
+  border-radius:3px;
+  padding:0.45rem 0.6rem;
+}
+.spell-stat-label {
+  font-family:var(--font-display);
+  font-size:0.48rem;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--gold);
+  margin-bottom:2px;
+}
+.spell-stat-value {
+  font-family:var(--font-body);
+  font-size:0.9rem;
+  color:var(--ink-mid);
+}
+
+/* right page content */
+.spell-explanation {
+  font-family:var(--font-body);
+  font-size:1.05rem;
+  line-height:1.85;
+  color:var(--ink-mid);
+  margin-bottom:1.5rem;
+  position:relative; z-index:1;
+}
+.spell-mage-byline {
+  font-family:var(--font-italic);
+  font-style:italic;
+  font-size:0.88rem;
+  color:var(--ink-light);
+  border-top:1px solid var(--cream-border);
+  padding-top:0.8rem;
+  margin-top:auto;
+  position:relative; z-index:1;
+}
+
+/* ── spell entries (list style) ── */
+.spell-entry {
+  display:flex; align-items:flex-start; gap:0.6rem;
+  padding:0.65rem 0;
+  border-bottom:1px solid rgba(166,124,46,0.15);
+  cursor:pointer;
+  transition:all 0.15s;
+  position:relative;
+}
+.spell-entry:hover { background:rgba(166,124,46,0.06); padding-left:0.3rem; }
+.spell-entry:last-child { border-bottom:none; }
+.spell-entry-num {
+  font-family:var(--font-display);
+  font-size:0.55rem;
+  color:var(--gold);
+  min-width:18px;
+  padding-top:2px;
+  opacity:0.7;
+}
+.spell-entry-body { flex:1; }
+.spell-entry-name {
+  font-family:var(--font-display);
+  font-size:0.82rem;
+  color:var(--green-deep);
+  letter-spacing:0.06em;
+  margin-bottom:1px;
+}
+.spell-entry-author {
+  font-family:var(--font-italic);
+  font-style:italic;
+  font-size:0.72rem;
+  color:var(--ink-light);
+}
+.spell-entry-arrow { color:var(--gold); font-size:0.75rem; opacity:0.6; padding-top:2px; }
+
+.empty-floor {
+  padding:2rem; text-align:center;
+  font-family:var(--font-italic);
+  font-style:italic;
+  color:var(--ink-light);
+  font-size:0.95rem;
+}
+
+
+/* spell entry in list */
+.spell-entry {
+  display:flex; align-items:center;
+  padding:0.9rem 1.2rem;
+  border-bottom:1px solid var(--cream-border);
+  cursor:pointer;
+  transition:all 0.18s;
+  gap:1rem;
+}
+.spell-entry:hover { background:var(--parchment-dark); }
+.spell-entry:last-child { border-bottom:none; }
+.spell-entry-name {
+  font-family:var(--font-display);
+  font-size:0.8rem;
+  color:var(--green-deep);
+  letter-spacing:0.08em;
+  flex:1;
+}
+.spell-entry-author {
+  font-family:var(--font-italic);
+  font-style:italic;
+  font-size:0.75rem;
+  color:var(--ink-light);
+}
+.spell-entry-arrow { color:var(--gold); font-size:0.8rem; }
+
+.empty-floor {
+  padding:3rem; text-align:center;
+  font-family:var(--font-italic);
+  font-style:italic;
+  color:var(--ink-light);
+  font-size:1rem;
+}
+
+/* ── add spell modal ── */
+.modal-overlay {
+  display:none; position:fixed;
+  top:0; left:0; right:0; bottom:0;
+  background:rgba(28,20,8,0.65);
+  z-index:600;
+  align-items:center; justify-content:center;
+}
+.modal-overlay.open { display:flex; }
+.modal-box {
+  background:var(--parchment);
+  border:2px solid var(--gold);
+  border-radius:6px;
+  padding:2rem;
+  width:90%; max-width:580px;
+  max-height:90vh;
+  overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+.modal-title {
+  font-family:var(--font-display);
+  font-size:1rem;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--green-deep);
+  border-bottom:1px solid var(--gold);
+  padding-bottom:0.7rem;
+  margin-bottom:1.2rem;
+  display:flex; align-items:center; gap:0.6rem;
+}
+.modal-title::before, .modal-title::after {
+  content:'';
+  display:inline-block;
+  width:28px; height:14px;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 38 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2,18 Q19,6 36,14' stroke='%23b8860b' stroke-width='1'/%3E%3Cpath d='M8,16 C6,10 2,7 0,9 C3,13 6,15 8,16Z' fill='%235a7a4a'/%3E%3Cpath d='M16,11 C14,5 10,2 8,4 C11,8 14,10 16,11Z' fill='%235a7a4a'/%3E%3Cpath d='M24,9 C22,3 18,0 16,2 C19,6 22,8 24,9Z' fill='%235a7a4a'/%3E%3Ccircle cx='12' cy='12' r='1.5' fill='%23d4a017'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-size:contain;
+  flex-shrink:0;
+  opacity:0.75;
+}
+.modal-title::after { transform:scaleX(-1); }
+.form-group { margin-bottom:1rem; }
+.form-label {
+  display:block;
+  font-family:var(--font-display);
+  font-size:0.55rem;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--gold);
+  margin-bottom:0.35rem;
+}
+.form-input, .form-textarea, .form-select {
+  width:100%;
+  background:var(--parchment-dark);
+  border:1px solid var(--cream-border);
+  border-radius:3px;
+  padding:0.5rem 0.8rem;
+  font-family:var(--font-body);
+  font-size:0.95rem;
+  color:var(--ink);
+  outline:none;
+  transition:border-color 0.18s;
+}
+.form-input:focus, .form-textarea:focus { border-color:var(--gold); }
+.form-textarea { min-height:120px; resize:vertical; }
+.form-note {
+  font-family:var(--font-italic);
+  font-style:italic;
+  font-size:0.75rem;
+  color:var(--ink-light);
+  margin-top:0.3rem;
+}
+.modal-actions { display:flex; gap:0.7rem; justify-content:flex-end; margin-top:1.5rem; }
+.btn-primary {
+  font-family:var(--font-display);
+  font-size:0.6rem;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--gold-bright);
+  background:var(--green-deep);
+  border:1px solid var(--gold);
+  padding:0.5rem 1.2rem;
+  border-radius:3px;
+  cursor:pointer;
+  transition:all 0.18s;
+}
+.btn-primary:hover { background:var(--green-mid); }
+.btn-secondary {
+  font-family:var(--font-display);
+  font-size:0.6rem;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--ink-light);
+  background:transparent;
+  border:1px solid var(--cream-border);
+  padding:0.5rem 1.2rem;
+  border-radius:3px;
+  cursor:pointer;
+  transition:all 0.18s;
+}
+.btn-secondary:hover { border-color:var(--ink-light); }
+
+/* ══════════════════════════════
+   ALLTIME ESSENTIALS
+══════════════════════════════ */
+.essential-card {
+  background:linear-gradient(135deg, var(--parchment-dark) 0%, var(--parchment) 100%);
+  border:1px solid var(--cream-border);
+  border-left:5px solid var(--gold);
+  border-radius:4px;
+  padding:1.2rem 1.5rem;
+  margin-bottom:1rem;
+  position:relative;
+  transition:box-shadow 0.2s, transform 0.2s;
+  cursor:pointer;
+}
+.essential-card:hover {
+  box-shadow:0 6px 24px var(--shadow);
+  transform:translateX(3px);
+}
+.essential-star {
+  position:absolute; top:1rem; right:1.2rem;
+  color:var(--gold); font-size:1rem; opacity:0.6;
+}
+.essential-title {
+  font-family:var(--font-display);
+  font-size:1rem; color:var(--green-deep);
+  letter-spacing:0.08em; margin-bottom:0.3rem;
+}
+.essential-note {
+  font-family:var(--font-italic); font-style:italic;
+  font-size:0.85rem; color:var(--ink-light);
+  border-left:2px solid var(--cream-border);
+  padding-left:0.8rem; margin-top:0.5rem;
+  line-height:1.6;
+}
+.essential-meta {
+  font-size:0.72rem; color:var(--ink-light);
+  margin-top:0.4rem;
+  font-family:var(--font-italic); font-style:italic;
+}
+.essential-remove {
+  position:absolute; bottom:0.8rem; right:1.2rem;
+  font-family:var(--font-display); font-size:0.45rem;
+  letter-spacing:0.1em; color:#c0392b;
+  background:transparent; border:1px solid rgba(192,57,43,0.3);
+  padding:2px 7px; border-radius:2px; cursor:pointer;
+  opacity:0.5; transition:opacity 0.18s;
+}
+.essential-remove:hover { opacity:1; }
+
+
+.registry-controls {
+  display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;
+}
+
+.mage-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+  gap:1rem;
+}
+
+.mage-card {
+  background:var(--parchment-dark);
+  border:1px solid var(--cream-border);
+  border-radius:5px;
+  padding:1.2rem;
+  display:flex; gap:1rem; align-items:flex-start;
+  transition:all 0.2s; cursor:pointer;
+}
+.mage-card:hover { border-color:var(--gold); box-shadow:0 4px 16px var(--shadow); }
+.mage-avatar {
+  width:52px; height:52px; border-radius:50%;
+  background:linear-gradient(135deg, var(--green-mid), var(--green-deep));
+  border:2px solid var(--gold);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-display); font-size:1.2rem;
+  color:var(--gold-bright); font-weight:700; flex-shrink:0;
+}
+.mage-card-info { flex:1; }
+.mage-card-name {
+  font-family:var(--font-display); font-size:1rem;
+  color:var(--green-deep); letter-spacing:0.08em; margin-bottom:0.25rem;
+}
+.mage-card-rank {
+  font-family:var(--font-italic); font-style:italic;
+  font-size:0.95rem; color:var(--gold); margin-bottom:0.35rem;
+}
+.mage-card-place {
+  font-size:0.75rem; color:var(--ink-light);
+  border-top:1px solid var(--cream-border);
+  padding-top:0.35rem; margin-top:0.35rem;
+}
+.rank-badge {
+  font-family:var(--font-display); font-size:0.72rem;
+  letter-spacing:0.1em; text-transform:uppercase;
+  padding:4px 10px; border-radius:4px;
+  display:inline-block; margin-bottom:0.25rem;
+  font-weight:600; border:1px solid transparent;
+}
+.rank-apprentice { background:#f0e8cc; color:#7a5a10; border-color:#d4a017; }
+.rank-official   { background:#d8edd8; color:#2d5c2d; border-color:#4a8a4a; }
+.rank-great      { background:#cce0f0; color:#1a3a6a; border-color:#4a70aa; }
+.rank-grand      { background:#e8d8f0; color:#4a1a7a; border-color:#8a5aaa; }
+.rank-archmage   { background:#f0d8d8; color:#7a1a1a; border-color:#c04040; }
+
+
+/* ══════════════════════════════
+   ACADEMIC PAPERS PAGE
+══════════════════════════════ */
+.submit-paper-bar {
+  background:var(--parchment-dark);
+  border:1px solid var(--cream-border);
+  border-radius:5px;
+  padding:1rem 1.4rem;
+  margin-bottom:1.5rem;
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+}
+.submit-paper-bar p {
+  font-family:var(--font-italic);
+  font-style:italic;
+  color:var(--ink-light);
+  font-size:0.9rem;
+}
+
+/* ══════════════════════════════
+   SPELL ARCHITECT (iframe wrapper)
+══════════════════════════════ */
+.architect-wrapper {
+  width:100%;
+  height:calc(100vh - var(--header-h) - var(--tab-h) - 4rem);
+  border:1px solid var(--gold);
+  border-radius:5px;
+  overflow:hidden;
+  background:#05030a;
+}
+.architect-wrapper iframe {
+  width:100%; height:100%; border:none;
+}
+
+/* ══════════════════════════════
+   ADMIN PANEL
+══════════════════════════════ */
+.admin-section {
+  background:var(--parchment-dark);
+  border:1px solid var(--cream-border);
+  border-left:4px solid var(--gold);
+  border-radius:4px;
+  padding:1.2rem 1.5rem;
+  margin-bottom:1.5rem;
+}
+.admin-section-title {
+  font-family:var(--font-display);
+  font-size:0.75rem;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--gold);
+  margin-bottom:1rem;
+}
+.pending-item {
+  background:var(--parchment);
+  border:1px solid var(--cream-border);
+  border-radius:4px;
+  padding:0.8rem 1rem;
+  margin-bottom:0.6rem;
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+}
+.pending-item-info { flex:1; }
+.pending-item-name {
+  font-family:var(--font-display);
+  font-size:0.75rem;
+  color:var(--green-deep);
+  margin-bottom:2px;
+}
+.pending-item-detail {
+  font-size:0.78rem;
+  color:var(--ink-light);
+  font-family:var(--font-italic);
+  font-style:italic;
+}
+.pending-actions { display:flex; gap:0.5rem; }
+.btn-approve {
+  font-family:var(--font-display);
+  font-size:0.5rem;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:#fff;
+  background:#2d7a2d;
+  border:1px solid #4a9a4a;
+  padding:0.3rem 0.7rem;
+  border-radius:3px;
+  cursor:pointer;
+}
+.btn-reject {
+  font-family:var(--font-display);
+  font-size:0.5rem;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:#fff;
+  background:#7a2d2d;
+  border:1px solid #9a4a4a;
+  padding:0.3rem 0.7rem;
+  border-radius:3px;
+  cursor:pointer;
+}
+
+/* ══════════════════════════════
+   PROFILE DROPDOWN
+══════════════════════════════ */
+.profile-dropdown {
+  display:none; position:fixed;
+  top:calc(var(--header-h) - 8px);
+  right:1.5rem;
+  background:var(--parchment);
+  border:1px solid var(--gold);
+  border-radius:5px;
+  min-width:260px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.35);
+  z-index:300;
+  overflow:hidden;
+}
+.profile-dropdown.open { display:block; }
+.dropdown-header {
+  background:linear-gradient(135deg, var(--green-deep), var(--green-mid));
+  padding:1rem 1.2rem;
+  color:var(--gold-bright);
+}
+.dropdown-name {
+  font-family:var(--font-display);
+  font-size:0.9rem;
+  letter-spacing:0.1em;
+}
+.dropdown-rank {
+  font-family:var(--font-italic);
+  font-style:italic;
+  font-size:0.75rem;
+  opacity:0.8;
+  margin-top:2px;
+}
+.dropdown-place {
+  font-size:0.65rem;
+  opacity:0.65;
+  margin-top:2px;
+}
+.dropdown-item {
+  padding:0.7rem 1.2rem;
+  font-family:var(--font-display);
+  font-size:0.6rem;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--ink-mid);
+  cursor:pointer;
+  border-bottom:1px solid var(--cream-border);
+  transition:all 0.15s;
+}
+.dropdown-item:hover { background:var(--parchment-dark); color:var(--green-deep); }
+.dropdown-item:last-child { border-bottom:none; }
+.dropdown-item.danger { color:#c0392b; }
+
+/* ══════════════════════════════
+   LOGIN MODAL
+══════════════════════════════ */
+.login-modal .modal-box { max-width:400px; }
+
+/* ══════════════════════════════
+   DECORATIVE DIVIDER
+══════════════════════════════ */
+.ornamental-divider {
+  text-align:center;
+  color:var(--gold);
+  font-size:1rem;
+  margin:1.5rem 0;
+  opacity:0.5;
+  letter-spacing:0.3em;
+}
+
+/* ══════════════════════════════
+   NOTIFICATION TOAST
+══════════════════════════════ */
+.toast {
+  position:fixed;
+  bottom:2rem; right:2rem;
+  background:var(--green-deep);
+  color:var(--gold-bright);
+  font-family:var(--font-display);
+  font-size:0.65rem;
+  letter-spacing:0.12em;
+  padding:0.7rem 1.2rem;
+  border-radius:4px;
+  border:1px solid var(--gold);
+  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  z-index:1000;
+  opacity:0;
+  transform:translateY(10px);
+  transition:all 0.3s;
+  pointer-events:none;
+}
+.toast.show { opacity:1; transform:translateY(0); }
+
+/* ══════════════════════════════
+   LEAF DECORATIONS
+══════════════════════════════ */
+.bg-leaves {
+  position:fixed; top:0; left:0; right:0; bottom:0;
+  pointer-events:none; z-index:0;
+  overflow:hidden;
+}
+.bg-leaf {
+  position:absolute;
+  opacity:0.07;
+  color:var(--green-mid);
+}
+
+/* responsive tweaks */
+@media (max-width:768px) {
+  #main-content { padding:1rem; }
+  .library-outer { flex-direction:column; }
+  .floor-selector { width:100%; display:flex; gap:0.4rem; overflow-x:auto; flex-wrap:nowrap; }
+  .floor-btn { min-width:120px; margin-bottom:0; }
+  .header-title { font-size:0.8rem; }
+  .spell-book-pages { flex-direction:column; }
+  .spell-page-left { border-right:none; border-bottom:3px solid var(--gold); }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ BACKGROUND LAUREL LEAVES ═══════════════════════ -->
+<div class="bg-leaves" aria-hidden="true">
+  <!-- scattered natural leaves, lower opacity -->
+  <svg style="position:fixed;top:8%;left:1%;width:110px;opacity:0.07;color:#5a7a4a;pointer-events:none" viewBox="0 0 200 300" fill="currentColor">
+    <path d="M60,10 C20,40 5,90 15,150 C25,200 55,230 80,240 C70,200 65,160 70,120 C75,80 90,50 100,30 C85,20 70,12 60,10Z"/>
+    <path d="M60,10 C75,50 80,100 75,150 C70,195 60,220 50,235 M60,10 L45,80 M60,10 L75,100 M60,10 L40,130 M60,10 L80,140" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.5"/>
+  </svg>
+  <svg style="position:fixed;top:8%;left:1%;width:110px;opacity:0.07;color:#b8860b;pointer-events:none;transform:scaleX(-1) translateX(-2px)" viewBox="0 0 200 300" fill="currentColor">
+    <path d="M60,10 C20,40 5,90 15,150 C25,200 55,230 80,240 C70,200 65,160 70,120 C75,80 90,50 100,30 C85,20 70,12 60,10Z"/>
+    <path d="M60,10 C75,50 80,100 75,150 C70,195 60,220 50,235 M60,10 L45,80 M60,10 L75,100 M60,10 L40,130 M60,10 L80,140" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.5"/>
+  </svg>
+
+  <svg style="position:fixed;top:35%;right:0%;width:90px;opacity:0.065;color:#5a7a4a;pointer-events:none;transform:rotate(30deg)" viewBox="0 0 200 300" fill="currentColor">
+    <path d="M60,10 C20,40 5,90 15,150 C25,200 55,230 80,240 C70,200 65,160 70,120 C75,80 90,50 100,30 C85,20 70,12 60,10Z"/>
+    <path d="M60,10 C75,50 80,100 75,150" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.5"/>
+  </svg>
+  <svg style="position:fixed;top:35%;right:0%;width:90px;opacity:0.065;color:#b8860b;pointer-events:none;transform:rotate(30deg) scaleX(-1)" viewBox="0 0 200 300" fill="currentColor">
+    <path d="M60,10 C20,40 5,90 15,150 C25,200 55,230 80,240 C70,200 65,160 70,120 C75,80 90,50 100,30 C85,20 70,12 60,10Z"/>
+    <path d="M60,10 C75,50 80,100 75,150" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.5"/>
+  </svg>
+
+  <svg style="position:fixed;bottom:10%;left:3%;width:80px;opacity:0.07;color:#5a7a4a;pointer-events:none;transform:rotate(-15deg)" viewBox="0 0 200 300" fill="currentColor">
+    <path d="M60,10 C20,40 5,90 15,150 C25,200 55,230 80,240 C70,200 65,160 70,120 C75,80 90,50 100,30 C85,20 70,12 60,10Z"/>
+    <path d="M60,10 C75,50 80,100 75,150" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.5"/>
+  </svg>
+  <svg style="position:fixed;bottom:10%;right:2%;width:100px;opacity:0.07;color:#b8860b;pointer-events:none;transform:rotate(20deg)" viewBox="0 0 200 300" fill="currentColor">
+    <path d="M60,10 C20,40 5,90 15,150 C25,200 55,230 80,240 C70,200 65,160 70,120 C75,80 90,50 100,30 C85,20 70,12 60,10Z"/>
+    <path d="M60,10 C75,50 80,100 75,150" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.5"/>
+  </svg>
+</div>
+
+<!-- ═══════════════════════ CORNER FLOURISHES ═══════════════════════ -->
+<!-- Top-left corner -->
+<svg class="corner-flourish tl" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M8,8 Q8,60 60,60" stroke="#b8860b" stroke-width="1.2" fill="none"/>
+  <path d="M8,8 Q60,8 60,60" stroke="#5a7a4a" stroke-width="0.8" fill="none" stroke-dasharray="2,3"/>
+  <!-- swirling calligraphic lines -->
+  <path d="M8,8 C14,4 20,6 22,14 C24,22 18,30 24,36 C30,42 44,38 50,46 C56,54 52,66 60,68" stroke="#b8860b" stroke-width="1.4" fill="none"/>
+  <path d="M8,8 C4,14 6,24 14,28 C22,32 36,26 40,36 C44,46 38,58 46,64 C54,70 66,66 70,74" stroke="#5a7a4a" stroke-width="1" fill="none"/>
+  <!-- leaf flourishes -->
+  <path d="M22,14 C18,10 12,10 10,14 C14,16 18,16 22,14Z" fill="#5a7a4a" opacity="0.9"/>
+  <path d="M24,36 C20,32 14,33 13,37 C17,38 21,38 24,36Z" fill="#5a7a4a" opacity="0.9"/>
+  <path d="M50,46 C47,41 41,41 40,45 C44,47 47,47 50,46Z" fill="#5a7a4a" opacity="0.9"/>
+  <path d="M14,28 C10,24 5,25 4,29 C8,31 12,30 14,28Z" fill="#b8860b" opacity="0.7"/>
+  <path d="M40,36 C37,31 31,32 30,36 C34,38 38,37 40,36Z" fill="#b8860b" opacity="0.7"/>
+  <!-- dot accents -->
+  <circle cx="22" cy="14" r="1.5" fill="#d4a017" opacity="0.8"/>
+  <circle cx="40" cy="36" r="1.5" fill="#d4a017" opacity="0.8"/>
+  <circle cx="60" cy="60" r="2" fill="#b8860b" opacity="0.6"/>
+  <!-- small curl at corner -->
+  <path d="M8,8 C6,6 5,5 8,3 C11,1 14,4 12,8" stroke="#b8860b" stroke-width="1" fill="none"/>
+  <path d="M8,8 C6,10 4,12 2,10 C0,8 2,5 4,6" stroke="#5a7a4a" stroke-width="0.8" fill="none"/>
+</svg>
+<!-- Top-right corner -->
+<svg class="corner-flourish tr" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M8,8 Q8,60 60,60" stroke="#b8860b" stroke-width="1.2" fill="none"/>
+  <path d="M8,8 Q60,8 60,60" stroke="#5a7a4a" stroke-width="0.8" fill="none" stroke-dasharray="2,3"/>
+  <path d="M8,8 C14,4 20,6 22,14 C24,22 18,30 24,36 C30,42 44,38 50,46 C56,54 52,66 60,68" stroke="#b8860b" stroke-width="1.4" fill="none"/>
+  <path d="M8,8 C4,14 6,24 14,28 C22,32 36,26 40,36 C44,46 38,58 46,64 C54,70 66,66 70,74" stroke="#5a7a4a" stroke-width="1" fill="none"/>
+  <path d="M22,14 C18,10 12,10 10,14 C14,16 18,16 22,14Z" fill="#5a7a4a" opacity="0.9"/>
+  <path d="M24,36 C20,32 14,33 13,37 C17,38 21,38 24,36Z" fill="#5a7a4a" opacity="0.9"/>
+  <path d="M50,46 C47,41 41,41 40,45 C44,47 47,47 50,46Z" fill="#5a7a4a" opacity="0.9"/>
+  <path d="M14,28 C10,24 5,25 4,29 C8,31 12,30 14,28Z" fill="#b8860b" opacity="0.7"/>
+  <circle cx="22" cy="14" r="1.5" fill="#d4a017" opacity="0.8"/>
+  <circle cx="40" cy="36" r="1.5" fill="#d4a017" opacity="0.8"/>
+  <circle cx="60" cy="60" r="2" fill="#b8860b" opacity="0.6"/>
+  <path d="M8,8 C6,6 5,5 8,3 C11,1 14,4 12,8" stroke="#b8860b" stroke-width="1" fill="none"/>
+</svg>
+<!-- Bottom-left corner -->
+<svg class="corner-flourish bl" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M8,8 Q8,60 60,60" stroke="#b8860b" stroke-width="1.2" fill="none"/>
+  <path d="M8,8 Q60,8 60,60" stroke="#5a7a4a" stroke-width="0.8" fill="none" stroke-dasharray="2,3"/>
+  <path d="M8,8 C14,4 20,6 22,14 C24,22 18,30 24,36 C30,42 44,38 50,46 C56,54 52,66 60,68" stroke="#b8860b" stroke-width="1.4" fill="none"/>
+  <path d="M22,14 C18,10 12,10 10,14 C14,16 18,16 22,14Z" fill="#5a7a4a" opacity="0.9"/>
+  <path d="M24,36 C20,32 14,33 13,37 C17,38 21,38 24,36Z" fill="#5a7a4a" opacity="0.9"/>
+  <path d="M14,28 C10,24 5,25 4,29 C8,31 12,30 14,28Z" fill="#b8860b" opacity="0.7"/>
+  <circle cx="22" cy="14" r="1.5" fill="#d4a017" opacity="0.8"/>
+  <circle cx="60" cy="60" r="2" fill="#b8860b" opacity="0.6"/>
+</svg>
+<!-- Bottom-right corner -->
+<svg class="corner-flourish br" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M8,8 Q8,60 60,60" stroke="#b8860b" stroke-width="1.2" fill="none"/>
+  <path d="M8,8 Q60,8 60,60" stroke="#5a7a4a" stroke-width="0.8" fill="none" stroke-dasharray="2,3"/>
+  <path d="M8,8 C14,4 20,6 22,14 C24,22 18,30 24,36 C30,42 44,38 50,46 C56,54 52,66 60,68" stroke="#b8860b" stroke-width="1.4" fill="none"/>
+  <path d="M22,14 C18,10 12,10 10,14 C14,16 18,16 22,14Z" fill="#5a7a4a" opacity="0.9"/>
+  <path d="M24,36 C20,32 14,33 13,37 C17,38 21,38 24,36Z" fill="#5a7a4a" opacity="0.9"/>
+  <path d="M14,28 C10,24 5,25 4,29 C8,31 12,30 14,28Z" fill="#b8860b" opacity="0.7"/>
+  <circle cx="22" cy="14" r="1.5" fill="#d4a017" opacity="0.8"/>
+  <circle cx="60" cy="60" r="2" fill="#b8860b" opacity="0.6"/>
+</svg>
+
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<header id="site-header">
+  <div class="header-crest">
+    <div class="crest-emblem">✦</div>
+    <div class="header-title-block">
+      <div class="header-title">World Mage Association</div>
+      <div class="header-subtitle">Associatio Magorum Mundi — Est. Year of the Great Convergence</div>
+    </div>
+  </div>
+
+  <!-- Profile / Login -->
+  <div id="profile-area" onclick="toggleProfileDropdown()">
+    <div id="profile-display-logged-out">
+      <button class="btn-login" onclick="event.stopPropagation(); openLoginModal()">Sign In ✦</button>
+    </div>
+    <div id="profile-display-logged-in" style="display:none; display:flex; gap:0.8rem; align-items:center;">
+      <div class="profile-info">
+        <div class="profile-name" id="profile-name-display">—</div>
+        <div class="profile-rank" id="profile-rank-display">—</div>
+        <div class="profile-place" id="profile-place-display">—</div>
+      </div>
+      <div class="profile-avatar" id="profile-avatar-initial">M</div>
+      <div class="profile-badge" id="profile-pending-badge" style="display:none">Pending</div>
+    </div>
+  </div>
+
+  <!-- Laurel garland along bottom of header -->
+  <div style="position:absolute;bottom:-2px;left:0;right:0;height:22px;pointer-events:none;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;">
+    <svg viewBox="0 0 1200 22" preserveAspectRatio="xMidYMax slice" style="width:100%;height:22px;display:block" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- repeating laurel branch pattern left side -->
+      <g opacity="0.85">
+        <!-- stem -->
+        <path d="M0,18 Q300,8 600,18 Q900,28 1200,18" stroke="#b8860b" stroke-width="1.2" fill="none"/>
+        <!-- green leaves left cascade -->
+        <path d="M80,18 C75,10 65,6 60,9 C65,14 72,17 80,18Z" fill="#5a7a4a"/>
+        <path d="M80,18 C85,10 95,6 100,9 C95,14 88,17 80,18Z" fill="#5a7a4a"/>
+        <path d="M160,15 C155,7 145,3 140,6 C145,11 152,14 160,15Z" fill="#5a7a4a"/>
+        <path d="M160,15 C165,7 175,3 180,6 C175,11 168,14 160,15Z" fill="#5a7a4a"/>
+        <path d="M240,13 C235,5 225,1 220,4 C225,9 232,12 240,13Z" fill="#5a7a4a"/>
+        <path d="M240,13 C245,5 255,1 260,4 C255,9 248,12 240,13Z" fill="#5a7a4a"/>
+        <path d="M320,12 C315,4 305,0 300,3 C305,8 312,11 320,12Z" fill="#5a7a4a"/>
+        <path d="M320,12 C325,4 335,0 340,3 C335,8 328,11 320,12Z" fill="#5a7a4a"/>
+        <path d="M400,12 C395,4 385,0 380,3 C385,8 392,11 400,12Z" fill="#5a7a4a"/>
+        <path d="M400,12 C405,4 415,0 420,3 C415,8 408,11 400,12Z" fill="#5a7a4a"/>
+        <path d="M480,13 C475,5 465,1 460,4 C465,9 472,12 480,13Z" fill="#5a7a4a"/>
+        <path d="M480,13 C485,5 495,1 500,4 C495,9 488,12 480,13Z" fill="#5a7a4a"/>
+        <path d="M560,15 C555,7 545,3 540,6 C545,11 552,14 560,15Z" fill="#5a7a4a"/>
+        <path d="M560,15 C565,7 575,3 580,6 C575,11 568,14 560,15Z" fill="#5a7a4a"/>
+        <path d="M640,15 C635,7 625,3 620,6 C625,11 632,14 640,15Z" fill="#5a7a4a"/>
+        <path d="M640,15 C645,7 655,3 660,6 C655,11 648,14 640,15Z" fill="#5a7a4a"/>
+        <path d="M720,13 C715,5 705,1 700,4 C705,9 712,12 720,13Z" fill="#5a7a4a"/>
+        <path d="M720,13 C725,5 735,1 740,4 C735,9 728,12 720,13Z" fill="#5a7a4a"/>
+        <path d="M800,12 C795,4 785,0 780,3 C785,8 792,11 800,12Z" fill="#5a7a4a"/>
+        <path d="M800,12 C805,4 815,0 820,3 C815,8 808,11 800,12Z" fill="#5a7a4a"/>
+        <path d="M880,12 C875,4 865,0 860,3 C865,8 872,11 880,12Z" fill="#5a7a4a"/>
+        <path d="M880,12 C885,4 895,0 900,3 C895,8 888,11 880,12Z" fill="#5a7a4a"/>
+        <path d="M960,13 C955,5 945,1 940,4 C945,9 952,12 960,13Z" fill="#5a7a4a"/>
+        <path d="M960,13 C965,5 975,1 980,4 C975,9 968,12 960,13Z" fill="#5a7a4a"/>
+        <path d="M1040,15 C1035,7 1025,3 1020,6 C1025,11 1032,14 1040,15Z" fill="#5a7a4a"/>
+        <path d="M1040,15 C1045,7 1055,3 1060,6 C1055,11 1048,14 1040,15Z" fill="#5a7a4a"/>
+        <path d="M1120,18 C1115,10 1105,6 1100,9 C1105,14 1112,17 1120,18Z" fill="#5a7a4a"/>
+        <path d="M1120,18 C1125,10 1135,6 1140,9 C1135,14 1128,17 1120,18Z" fill="#5a7a4a"/>
+        <!-- gold berries/dots at intervals -->
+        <circle cx="120" cy="13" r="2" fill="#d4a017"/>
+        <circle cx="200" cy="10" r="2" fill="#d4a017"/>
+        <circle cx="280" cy="9" r="2" fill="#d4a017"/>
+        <circle cx="360" cy="8" r="2" fill="#d4a017"/>
+        <circle cx="440" cy="8" r="2" fill="#d4a017"/>
+        <circle cx="520" cy="9" r="2" fill="#d4a017"/>
+        <circle cx="600" cy="11" r="2.5" fill="#f0c040"/>
+        <circle cx="680" cy="9" r="2" fill="#d4a017"/>
+        <circle cx="760" cy="8" r="2" fill="#d4a017"/>
+        <circle cx="840" cy="8" r="2" fill="#d4a017"/>
+        <circle cx="920" cy="9" r="2" fill="#d4a017"/>
+        <circle cx="1000" cy="10" r="2" fill="#d4a017"/>
+        <circle cx="1080" cy="13" r="2" fill="#d4a017"/>
+      </g>
+    </svg>
+  </div>
+</header>
+
+<!-- ═══════════════════════ PROFILE DROPDOWN ═══════════════════════ -->
+<div class="profile-dropdown" id="profile-dropdown">
+  <div class="dropdown-header">
+    <div class="dropdown-name" id="dd-name">Mage Name</div>
+    <div class="dropdown-rank" id="dd-rank">Rank · Place</div>
+    <div class="dropdown-place" id="dd-place"></div>
+  </div>
+  <div class="dropdown-item" onclick="closeDropdown()">My Profile</div>
+  <div class="dropdown-item" onclick="closeDropdown()">My Submissions</div>
+  <div class="dropdown-item" onclick="closeDropdown()">Settings</div>
+  <div class="dropdown-item danger" onclick="logout()">Sign Out</div>
+</div>
+
+<!-- ═══════════════════════ TAB NAVIGATION ═══════════════════════ -->
+<nav id="tab-nav">
+  <button class="tab-btn active" data-page="hot-topics" onclick="switchTab(this)">✦ Hot Topics</button>
+  <button class="tab-btn" data-page="essentials" onclick="switchTab(this)">★ Alltime Essentials</button>
+  <button class="tab-btn" data-page="academic" onclick="switchTab(this)">Academic Papers</button>
+  <button class="tab-btn" data-page="library" onclick="switchTab(this)">Library of Andreas</button>
+  <button class="tab-btn" data-page="architect" onclick="switchTab(this)">Spell Architect</button>
+  <button class="tab-btn" data-page="registry" onclick="switchTab(this)">Mage Registry</button>
+  <button class="tab-btn admin-tab" data-page="admin" id="admin-tab" style="display:none" onclick="switchTab(this)">⚑ Archmage Panel</button>
+</nav>
+
+<!-- ═══════════════════════ MAIN CONTENT ═══════════════════════ -->
+<main id="main-content">
+
+  <!-- ══════════════ ALLTIME ESSENTIALS ══════════════ -->
+  <div class="page-panel" id="page-essentials">
+    <h1 class="section-title"><span class="ornament">★</span> Alltime Essentials</h1>
+    <p class="section-subtitle">Curated by the Archmage of Destruction — works of enduring significance to the Association</p>
+    <div class="ornament-divider" aria-hidden="true">
+      <svg viewBox="0 0 600 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="0" y1="14" x2="210" y2="14" stroke="#a67c2e" stroke-width="0.8" opacity="0.5"/>
+        <line x1="0" y1="17" x2="210" y2="17" stroke="#5c7a45" stroke-width="0.4" opacity="0.4"/>
+        <rect x="205" y="10" width="2" height="8" fill="#a67c2e" opacity="0.7"/>
+        <rect x="212" y="8" width="1.5" height="12" fill="#a67c2e" opacity="0.5"/>
+        <circle cx="222" cy="14" r="1.5" fill="#a67c2e" opacity="0.6"/>
+        <circle cx="229" cy="14" r="2" fill="#5c7a45" opacity="0.7"/>
+        <circle cx="237" cy="14" r="1.5" fill="#a67c2e" opacity="0.6"/>
+        <polygon points="270,5 300,14 270,23 300,14" fill="none" stroke="#a67c2e" stroke-width="1.2" opacity="0.8"/>
+        <polygon points="300,5 330,14 300,23 330,14" fill="none" stroke="#a67c2e" stroke-width="1.2" opacity="0.8"/>
+        <polygon points="285,10 300,14 285,18" fill="#c49a3c" opacity="0.6"/>
+        <polygon points="300,10 315,14 300,18" fill="#c49a3c" opacity="0.6"/>
+        <circle cx="300" cy="14" r="4" fill="#a67c2e" opacity="0.5"/>
+        <circle cx="300" cy="14" r="2" fill="#dbb84a" opacity="1"/>
+        <circle cx="363" cy="14" r="1.5" fill="#a67c2e" opacity="0.6"/>
+        <circle cx="371" cy="14" r="2" fill="#5c7a45" opacity="0.7"/>
+        <circle cx="378" cy="14" r="1.5" fill="#a67c2e" opacity="0.6"/>
+        <rect x="386.5" y="8" width="1.5" height="12" fill="#a67c2e" opacity="0.5"/>
+        <rect x="393" y="10" width="2" height="8" fill="#a67c2e" opacity="0.7"/>
+        <line x1="390" y1="14" x2="600" y2="14" stroke="#a67c2e" stroke-width="0.8" opacity="0.5"/>
+        <line x1="390" y1="17" x2="600" y2="17" stroke="#5c7a45" stroke-width="0.4" opacity="0.4"/>
+      </svg>
+    </div>
+    <div id="essentials-list">
+      <div class="essentials-empty" id="essentials-empty">
+        <div style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);font-size:1.05rem;text-align:center;padding:3rem 2rem;border:1px dashed var(--cream-border);border-radius:4px;background:var(--parchment-dark)">
+          The Archmage has not yet placed any works here.<br>
+          <span style="font-size:0.85rem;opacity:0.6">This collection is curated personally — it cannot be voted upon.</span>
+        </div>
+      </div>
+    </div>
+    <!-- Admin add button (only visible to archmage) -->
+    <div id="essentials-admin-bar" style="display:none;margin-top:1.5rem">
+      <button class="btn-primary" onclick="openEssentialsModal()">★ Pin a Work to Essentials</button>
+    </div>
+  </div>
+
+  <!-- ══════════════ HOT TOPICS ══════════════ -->
+  <div class="page-panel active" id="page-hot-topics">
+    <h1 class="section-title"><span class="ornament">✦</span> Hot Topics</h1>
+    <p class="section-subtitle">Academic works currently circulating among the Association — ranked by scholarly endorsement</p>
+    <div class="ornament-divider" aria-hidden="true">
+      <svg viewBox="0 0 600 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- left arm -->
+        <line x1="0" y1="14" x2="210" y2="14" stroke="#b8860b" stroke-width="0.8" opacity="0.5"/>
+        <line x1="0" y1="17" x2="210" y2="17" stroke="#5a7a4a" stroke-width="0.4" opacity="0.4"/>
+        <!-- left bracket -->
+        <rect x="205" y="10" width="2" height="8" fill="#b8860b" opacity="0.7"/>
+        <rect x="212" y="8" width="1.5" height="12" fill="#b8860b" opacity="0.5"/>
+        <!-- left dots -->
+        <circle cx="222" cy="14" r="1.5" fill="#b8860b" opacity="0.6"/>
+        <circle cx="229" cy="14" r="2" fill="#5a7a4a" opacity="0.7"/>
+        <circle cx="237" cy="14" r="1.5" fill="#b8860b" opacity="0.6"/>
+        <!-- center diamond motif -->
+        <polygon points="270,6 300,14 270,22 300,14" fill="none" stroke="#b8860b" stroke-width="1" opacity="0.7"/>
+        <polygon points="300,6 330,14 300,22 330,14" fill="none" stroke="#b8860b" stroke-width="1" opacity="0.7"/>
+        <polygon points="285,10 300,14 285,18" fill="#5a7a4a" opacity="0.5"/>
+        <polygon points="300,10 315,14 300,18" fill="#5a7a4a" opacity="0.5"/>
+        <circle cx="300" cy="14" r="3" fill="#b8860b" opacity="0.6"/>
+        <circle cx="300" cy="14" r="1.5" fill="#d4a017" opacity="0.9"/>
+        <!-- right dots -->
+        <circle cx="363" cy="14" r="1.5" fill="#b8860b" opacity="0.6"/>
+        <circle cx="371" cy="14" r="2" fill="#5a7a4a" opacity="0.7"/>
+        <circle cx="378" cy="14" r="1.5" fill="#b8860b" opacity="0.6"/>
+        <!-- right bracket -->
+        <rect x="386.5" y="8" width="1.5" height="12" fill="#b8860b" opacity="0.5"/>
+        <rect x="393" y="10" width="2" height="8" fill="#b8860b" opacity="0.7"/>
+        <!-- right arm -->
+        <line x1="390" y1="14" x2="600" y2="14" stroke="#b8860b" stroke-width="0.8" opacity="0.5"/>
+        <line x1="390" y1="17" x2="600" y2="17" stroke="#5a7a4a" stroke-width="0.4" opacity="0.4"/>
+      </svg>
+    </div>
+
+    <div class="hot-topics-controls">
+      <div class="search-box">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="paper-search" placeholder="Search papers by title…" oninput="filterPapers()">
+      </div>
+      <select class="filter-select" id="paper-filter" onchange="filterPapers()">
+        <option value="all">All Papers</option>
+        <option value="reviewed">Peer Reviewed</option>
+        <option value="pending">Pending Review</option>
+      </select>
+    </div>
+
+    <div id="papers-list">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <!-- ══════════════ ACADEMIC PAPERS ══════════════ -->
+  <div class="page-panel" id="page-academic">
+    <h1 class="section-title"><span class="ornament">✦</span> Academic Papers & Theories</h1>
+    <p class="section-subtitle">Scholarly works submitted by Grand Mages and above, awaiting or having passed archmage peer review</p>
+
+    <div class="submit-paper-bar">
+      <p>Only Grand Mages and above may submit papers for review.</p>
+      <button class="btn-primary" onclick="openSubmitModal()">Submit Paper ✦</button>
+    </div>
+
+    <div id="academic-papers-list">
+      <!-- same data as hot topics, but full list -->
+    </div>
+  </div>
+
+  <!-- ══════════════ LIBRARY OF ANDREAS ══════════════ -->
+  <div class="page-panel" id="page-library">
+    <h1 class="section-title"><span class="ornament">✦</span> Library of Andreas</h1>
+    <p class="section-subtitle">Seven floors of arcane knowledge — from the rudimentary to the legendary</p>
+    <div class="ornament-divider" aria-hidden="true">
+      <svg viewBox="0 0 600 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="0" y1="14" x2="210" y2="14" stroke="#a67c2e" stroke-width="0.8" opacity="0.5"/>
+        <line x1="0" y1="17" x2="210" y2="17" stroke="#5c7a45" stroke-width="0.4" opacity="0.4"/>
+        <rect x="205" y="10" width="2" height="8" fill="#a67c2e" opacity="0.7"/>
+        <rect x="212" y="8" width="1.5" height="12" fill="#a67c2e" opacity="0.5"/>
+        <circle cx="222" cy="14" r="1.5" fill="#a67c2e" opacity="0.6"/>
+        <circle cx="229" cy="14" r="2" fill="#5c7a45" opacity="0.7"/>
+        <circle cx="237" cy="14" r="1.5" fill="#a67c2e" opacity="0.6"/>
+        <polygon points="270,6 300,14 270,22 300,14" fill="none" stroke="#a67c2e" stroke-width="1" opacity="0.7"/>
+        <polygon points="300,6 330,14 300,22 330,14" fill="none" stroke="#a67c2e" stroke-width="1" opacity="0.7"/>
+        <polygon points="285,10 300,14 285,18" fill="#5c7a45" opacity="0.5"/>
+        <polygon points="300,10 315,14 300,18" fill="#5c7a45" opacity="0.5"/>
+        <circle cx="300" cy="14" r="3" fill="#a67c2e" opacity="0.6"/>
+        <circle cx="300" cy="14" r="1.5" fill="#c49a3c" opacity="0.9"/>
+        <circle cx="363" cy="14" r="1.5" fill="#a67c2e" opacity="0.6"/>
+        <circle cx="371" cy="14" r="2" fill="#5c7a45" opacity="0.7"/>
+        <circle cx="378" cy="14" r="1.5" fill="#a67c2e" opacity="0.6"/>
+        <rect x="386.5" y="8" width="1.5" height="12" fill="#a67c2e" opacity="0.5"/>
+        <rect x="393" y="10" width="2" height="8" fill="#a67c2e" opacity="0.7"/>
+        <line x1="390" y1="14" x2="600" y2="14" stroke="#a67c2e" stroke-width="0.8" opacity="0.5"/>
+        <line x1="390" y1="17" x2="600" y2="17" stroke="#5c7a45" stroke-width="0.4" opacity="0.4"/>
+      </svg>
+    </div>
+
+    <div class="library-outer">
+      <div class="library-main" id="library-main"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════ SPELL ARCHITECT ══════════════ -->
+  <div class="page-panel" id="page-architect">
+    <h1 class="section-title"><span class="ornament">✦</span> Spell Architect</h1>
+    <p class="section-subtitle">Design and craft spell circles — copy the export code to submit spells to the Library</p>
+    <div class="architect-wrapper">
+      <!-- Replace the src below with the actual path to spell_circle_architect.html when hosting -->
+      <iframe id="architect-frame" src="spell_circle_architect_3d__11_.html" title="Spell Circle Architect"></iframe>
+    </div>
+  </div>
+
+  <!-- ══════════════ MAGE REGISTRY ══════════════ -->
+  <div class="page-panel" id="page-registry">
+    <h1 class="section-title"><span class="ornament">✦</span> Mage Registry</h1>
+    <p class="section-subtitle">The confirmed mages of the World Mage Association, organized by institution</p>
+
+    <div class="registry-controls">
+      <div class="search-box" style="max-width:300px">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="mage-search" placeholder="Search mages…" oninput="filterMages()">
+      </div>
+      <select class="filter-select" id="place-filter" onchange="filterMages()">
+        <option value="all">All Institutions</option>
+        <option value="Akademia">Akademia</option>
+        <option value="Imperial Court Mages">Imperial Court Mages</option>
+        <option value="Imperial Magic Corps">Imperial Magic Corps</option>
+        <option value="Tower of Water">Tower of Water</option>
+        <option value="Tower of Ice">Tower of Ice</option>
+        <option value="Tower of Fire">Tower of Fire</option>
+        <option value="Tower of Earth">Tower of Earth</option>
+        <option value="Tower of Lightning">Tower of Lightning</option>
+        <option value="Tower of Solitude">Tower of Solitude</option>
+        <option value="Clock Tower">Clock Tower</option>
+        <option value="Magic Corps of Thorns">Magic Corps of Thorns</option>
+      </select>
+      <select class="filter-select" id="rank-filter" onchange="filterMages()">
+        <option value="all">All Ranks</option>
+        <option value="Apprentice Mage">Apprentice</option>
+        <option value="Official Mage">Official</option>
+        <option value="Great Mage">Great</option>
+        <option value="Grand Mage">Grand</option>
+        <option value="Archmage">Archmage</option>
+      </select>
+    </div>
+
+    <div class="mage-grid" id="mage-grid">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <!-- ══════════════ ADMIN PANEL ══════════════ -->
+  <div class="page-panel" id="page-admin">
+    <h1 class="section-title"><span class="ornament">⚑</span> Archmage Panel</h1>
+    <p class="section-subtitle">Administrative controls — visible only to the Archmage of Destruction and confirmed superiors</p>
+
+    <div class="admin-section">
+      <div class="admin-section-title">⧖ Pending Rank Confirmations</div>
+      <div id="pending-ranks">
+        <div class="pending-item">
+          <div class="pending-item-info">
+            <div class="pending-item-name">Seraphel Dawnweave</div>
+            <div class="pending-item-detail">Requests: <strong>Great Mage</strong> · Currently: Official Mage · Tower of Water</div>
+          </div>
+          <div class="pending-actions">
+            <button class="btn-approve" onclick="showToast('Rank confirmed')">Approve</button>
+            <button class="btn-reject" onclick="showToast('Rank rejected')">Reject</button>
+          </div>
+        </div>
+        <div class="pending-item">
+          <div class="pending-item-info">
+            <div class="pending-item-name">Torvin Ashcroft</div>
+            <div class="pending-item-detail">Requests: <strong>Grand Mage</strong> · Currently: Great Mage · Akademia</div>
+          </div>
+          <div class="pending-actions">
+            <button class="btn-approve" onclick="showToast('Rank confirmed')">Approve</button>
+            <button class="btn-reject" onclick="showToast('Rank rejected')">Reject</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <div class="admin-section-title">⧖ Pending Institutional Affiliations</div>
+      <div id="pending-places">
+        <div class="pending-item">
+          <div class="pending-item-info">
+            <div class="pending-item-name">Lyra Emberveil</div>
+            <div class="pending-item-detail">Requests affiliation: <strong>Clock Tower</strong></div>
+          </div>
+          <div class="pending-actions">
+            <button class="btn-approve" onclick="showToast('Affiliation confirmed')">Approve</button>
+            <button class="btn-reject" onclick="showToast('Affiliation rejected')">Reject</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <div class="admin-section-title">⧖ Papers Awaiting Peer Review</div>
+      <div id="pending-papers">
+        <div class="pending-item">
+          <div class="pending-item-info">
+            <div class="pending-item-name">On the Resonance Frequencies of Void-Adjacent Spell Matrices</div>
+            <div class="pending-item-detail">Submitted by: Grand Mage Aldren Voss · Akademia · 842 pts pending</div>
+          </div>
+          <div class="pending-actions">
+            <button class="btn-approve" onclick="showToast('Paper approved — now peer reviewed')">Pass Review</button>
+            <button class="btn-reject" onclick="showToast('Paper rejected')">Reject</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ═══════════════════════ SPELL BOOK VIEW (fullscreen) ═══════════════════════ -->
+<div class="spell-book-view" id="spell-book-view">
+  <div class="spell-book-container">
+    <!-- Left page: circle + stats -->
+    <div class="spell-page spell-page-left">
+      <div class="page-number" id="book-page-left-num">I</div>
+      <div class="spell-title-display" id="book-spell-name">—</div>
+      <div class="spell-circle-frame" id="book-circle-frame">
+        <div class="spell-circle-placeholder">Spell circle diagram<br>will appear here</div>
+      </div>
+      <div class="spell-stats-grid" id="book-stats-grid"></div>
+    </div>
+    <!-- Spine -->
+    <div class="book-spine-divider"></div>
+    <!-- Right page: explanation -->
+    <div class="spell-page spell-page-right" style="position:relative">
+      <button class="btn-close-book" onclick="closeSpellBook()">✕ Close</button>
+      <div class="page-number" id="book-page-right-num" style="margin-top:2rem">II</div>
+      <div class="spell-explanation" id="book-explanation">—</div>
+      <div class="spell-mage-byline" id="book-byline">— By Mage Name</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ ADD SPELL MODAL ═══════════════════════ -->
+<div class="modal-overlay" id="add-spell-modal">
+  <div class="modal-box" style="max-width:800px;width:96%">
+    <div class="modal-title">✦ Add Spell to Library</div>
+    <div class="form-group">
+      <label class="form-label">Spell Name</label>
+      <input class="form-input" id="spell-name-input" type="text" placeholder="Name of the spell…">
+    </div>
+    <!-- Embedded Spell Architect -->
+    <div class="form-group">
+      <label class="form-label">Design your Spell Circle below — then copy the export code</label>
+      <div style="width:100%;height:340px;border:1px solid var(--cream-border);border-radius:3px;overflow:hidden;background:#05030a;margin-bottom:0.5rem">
+        <iframe src="spell_circle_architect_3d__11_.html" style="width:100%;height:100%;border:none" title="Spell Architect"></iframe>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Spell Circle Export Code</label>
+      <textarea class="form-textarea" id="spell-code-input" placeholder="Paste the export code from Spell Architect here…" style="min-height:70px"></textarea>
+      <p class="form-note">In Spell Architect, use the export button (top-right) to copy the code, then paste it above.</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Spell Explanation & Thoughts</label>
+      <textarea class="form-textarea" id="spell-explanation-input" placeholder="Describe the spell, its workings, your thoughts on its construction…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('add-spell-modal')">Cancel</button>
+      <button class="btn-primary" onclick="submitSpell()">Add to Library ✦</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ SUBMIT PAPER MODAL ═══════════════════════ -->
+<div class="modal-overlay" id="submit-paper-modal">
+  <div class="modal-box">
+    <div class="modal-title">✦ Submit Academic Paper</div>
+    <div class="form-group">
+      <label class="form-label">Paper Title</label>
+      <input class="form-input" id="paper-title-input" type="text" placeholder="Full title of the paper…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Abstract / Summary</label>
+      <textarea class="form-textarea" id="paper-abstract-input" placeholder="A brief summary of the paper's subject and findings…"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Upload Paper (HTML, PDF, or Word)</label>
+      <input class="form-input" type="file" accept=".html,.pdf,.doc,.docx" id="paper-file-input">
+      <p class="form-note">Accepted formats: .html, .pdf, .doc, .docx</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('submit-paper-modal')">Cancel</button>
+      <button class="btn-primary" onclick="submitPaper()">Submit for Review ✦</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ LOGIN MODAL ═══════════════════════ -->
+<div class="modal-overlay login-modal" id="login-modal">
+  <div class="modal-box">
+    <div class="modal-title">✦ Enter the Association</div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="login-name" type="email" placeholder="Your email…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" id="login-password" type="password" placeholder="Your password…">
+    </div>
+    <div class="ornamental-divider">· · ✦ · ·</div>
+    <p style="font-family:var(--font-italic);font-style:italic;font-size:0.8rem;color:var(--ink-light);text-align:center;margin-bottom:1rem;">
+      New to the Association? Register and await confirmation from an Archmage.
+    </p>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="openRegisterModal()">Register</button>
+      <button class="btn-primary" onclick="doLogin()">Sign In ✦</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ REGISTER MODAL ═══════════════════════ -->
+<div class="modal-overlay" id="register-modal">
+  <div class="modal-box">
+    <div class="modal-title">✦ Register as a Mage</div>
+    <div class="form-group">
+      <label class="form-label">Full Mage Name</label>
+      <input class="form-input" id="reg-name" type="text" placeholder="Your name…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="reg-email" type="email" placeholder="Your email…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" id="reg-password" type="password" placeholder="Choose a password…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Claimed Rank</label>
+      <select class="form-select" id="reg-rank">
+        <option value="Apprentice Mage">Apprentice Mage</option>
+        <option value="Official Mage">Official Mage</option>
+        <option value="Great Mage">Great Mage</option>
+        <option value="Grand Mage">Grand Mage</option>
+        <option value="Archmage">Archmage</option>
+      </select>
+      <p class="form-note">Apprentice Mage requires no confirmation. All higher ranks must be confirmed by an Archmage or a confirmed mage of equal or greater rank from the same institution.</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Institutional Affiliation (optional)</label>
+      <select class="form-select" id="reg-place">
+        <option value="">— None / Unaffiliated —</option>
+        <option>Akademia</option>
+        <option>Imperial Court Mages</option>
+        <option>Imperial Magic Corps</option>
+        <option>Tower of Water</option>
+        <option>Tower of Ice</option>
+        <option>Tower of Fire</option>
+        <option>Tower of Earth</option>
+        <option>Tower of Lightning</option>
+        <option>Tower of Solitude</option>
+        <option>Clock Tower</option>
+        <option>Magic Corps of Thorns</option>
+      </select>
+      <p class="form-note">Affiliation must be confirmed by an Archmage or a confirmed member of that institution.</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('register-modal'); openLoginModal()">Back</button>
+      <button class="btn-primary" onclick="doRegister()">Register ✦</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ PIN ESSENTIALS MODAL ═══════════════════════ -->
+<div class="modal-overlay" id="essentials-modal">
+  <div class="modal-box">
+    <div class="modal-title">★ Pin a Work to Alltime Essentials</div>
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input class="form-input" id="ess-title" type="text" placeholder="Title of the work…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Author / Source</label>
+      <input class="form-input" id="ess-author" type="text" placeholder="Author or institution…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Archmage's Note</label>
+      <textarea class="form-textarea" id="ess-note" placeholder="Why this work is essential — your personal annotation…" style="min-height:90px"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('essentials-modal')">Cancel</button>
+      <button class="btn-primary" onclick="pinEssential()">Pin to Essentials ★</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TOAST ═══════════════════════ -->
+<div class="toast" id="toast"></div>
+
+<script type="module">
+// ═══════════════════════════════════════════════════════
+//  SUPABASE SETUP
+// ═══════════════════════════════════════════════════════
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL = 'https://ppgwympbjxhmcytqgfjf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwZ3d5bXBianhobWN5dHFnZmpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjg0MjIsImV4cCI6MjA4OTYwNDQyMn0.CY4E-c0T_As4LzxkwE2jtDgg4jupsTZ1K5e-5muTizY';
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ─── expose needed functions to global scope (onclick= handlers) ───
+window.switchTab        = switchTab;
+window.openLoginModal   = openLoginModal;
+window.openRegisterModal= openRegisterModal;
+window.toggleProfileDropdown = toggleProfileDropdown;
+window.closeDropdown    = closeDropdown;
+window.logout           = logout;
+window.doLogin          = doLogin;
+window.doRegister       = doRegister;
+window.filterPapers     = filterPapers;
+window.recommendPaper   = recommendPaper;
+window.openSubmitModal  = openSubmitModal;
+window.submitPaper      = submitPaper;
+window.filterMages      = filterMages;
+window.switchFloor      = switchFloor;
+window.openAddSpell     = openAddSpell;
+window.submitSpell      = submitSpell;
+window.openSpellBook    = openSpellBook;
+window.closeSpellBook   = closeSpellBook;
+window.openEssentialsModal = openEssentialsModal;
+window.pinEssential     = pinEssential;
+window.removeEssential  = removeEssential;
+window.openModal        = openModal;
+window.closeModal       = closeModal;
+window.approveRank      = approveRank;
+window.rejectRank       = rejectRank;
+window.approvePlace     = approvePlace;
+window.rejectPlace      = rejectPlace;
+window.approvePaper     = approvePaper;
+window.rejectPaper      = rejectPaper;
+
+
+// ═══════════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════════
+const RANKS = ['Apprentice Mage','Official Mage','Great Mage','Grand Mage','Archmage'];
+
+const FLOORS = [
+  { id:1, name:'First Floor',   tier:'Basic',        minRank:'Official Mage', addRank:'Official Mage'  },
+  { id:2, name:'Second Floor',  tier:'Intermediate', minRank:'Official Mage', addRank:'Official Mage'  },
+  { id:3, name:'Third Floor',   tier:'Unique',       minRank:'Great Mage',    addRank:'Great Mage'     },
+  { id:4, name:'Fourth Floor',  tier:'Epic',         minRank:'Great Mage',    addRank:'Great Mage'     },
+  { id:5, name:'Fifth Floor',   tier:'Hero',         minRank:'Grand Mage',    addRank:'Grand Mage'     },
+  { id:6, name:'Sixth Floor',   tier:'Mythic',       minRank:'Grand Mage',    addRank:'Grand Mage'     },
+  { id:7, name:'Seventh Floor', tier:'Legendary',    minRank:'Archmage',      addRank:'Archmage'       },
+];
+
+// ─── state ───
+let currentUser    = null;   // full profile row
+let currentFloor   = 1;
+let addingToFloor  = 1;
+let cachedSpells   = {};     // { floorId: [...] }
+let cachedPapers   = [];
+let cachedMages    = [];
+let cachedEssentials = [];
+let myRecommendations = new Set(); // paper ids I already recommended
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  // listen for auth changes
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (session?.user) {
+      await loadCurrentUser(session.user.id);
+    } else {
+      currentUser = null;
+      renderLoggedOut();
+    }
+    await loadAll();
+  });
+  // close modals on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+  // start point decay timer
+  setInterval(decayPoints, 3600000); // every real hour
+});
+
+async function loadAll() {
+  showLoading(true);
+  await Promise.all([
+    loadPapers(),
+    loadLibrary(),
+    loadMages(),
+    loadEssentials(),
+    loadMyRecommendations(),
+  ]);
+  renderPapers();
+  renderLibrary();
+  renderMages();
+  renderEssentials();
+  renderAdminPanel();
+  showLoading(false);
+}
+
+function showLoading(on) {
+  // subtle — just disable interactions while loading
+  document.getElementById('main-content').style.opacity = on ? '0.6' : '1';
+}
+
+// ═══════════════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════════════
+async function loadCurrentUser(uid) {
+  const { data, error } = await sb.from('profiles').select('*').eq('id', uid).single();
+  if (error || !data) { currentUser = null; renderLoggedOut(); return; }
+  currentUser = data;
+  renderLoggedIn();
+}
+
+function renderLoggedIn() {
+  document.getElementById('profile-display-logged-out').style.display = 'none';
+  const li = document.getElementById('profile-display-logged-in');
+  li.style.display = 'flex';
+  const rankLabel = currentUser.rank_pending
+    ? (currentUser.rank + ' (pending)')
+    : currentUser.rank;
+  document.getElementById('profile-name-display').textContent  = currentUser.name;
+  document.getElementById('profile-rank-display').textContent  = rankLabel;
+  document.getElementById('profile-place-display').textContent = currentUser.place || '';
+  document.getElementById('profile-avatar-initial').textContent = currentUser.name[0].toUpperCase();
+  document.getElementById('dd-name').textContent  = currentUser.name;
+  document.getElementById('dd-rank').textContent  = rankLabel;
+  document.getElementById('dd-place').textContent = currentUser.place || '';
+  const badge = document.getElementById('profile-pending-badge');
+  badge.style.display = (currentUser.rank_pending || currentUser.place_pending) ? 'block' : 'none';
+  document.getElementById('admin-tab').style.display = currentUser.is_admin ? '' : 'none';
+}
+
+function renderLoggedOut() {
+  document.getElementById('profile-display-logged-out').style.display = '';
+  document.getElementById('profile-display-logged-in').style.display  = 'none';
+  document.getElementById('admin-tab').style.display = 'none';
+}
+
+function openLoginModal()    { closeDropdown(); openModal('login-modal'); }
+function openRegisterModal() { closeModal('login-modal'); openModal('register-modal'); }
+
+async function doLogin() {
+  const email = document.getElementById('login-name').value.trim();
+  const pass  = document.getElementById('login-password').value;
+  if (!email || !pass) { showToast('Please enter email and password'); return; }
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { showToast('Sign in failed: ' + error.message); return; }
+  closeModal('login-modal');
+  showToast('Welcome back!');
+}
+
+async function doRegister() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-password').value;
+  const rank  = document.getElementById('reg-rank').value;
+  const place = document.getElementById('reg-place').value || 'Unaffiliated';
+  if (!name || !email || !pass) { showToast('Please fill all required fields'); return; }
+  if (pass.length < 6) { showToast('Password must be at least 6 characters'); return; }
+
+  const rankIndex        = RANKS.indexOf(rank);
+  const needsRankConfirm = rankIndex > 0;
+  const needsPlaceConfirm= place !== 'Unaffiliated';
+
+  const { data, error } = await sb.auth.signUp({
+    email, password: pass,
+    options: {
+      data: {
+        name,
+        rank: needsRankConfirm ? 'Apprentice Mage' : rank,
+        place: needsPlaceConfirm ? 'Unaffiliated' : place,
+      }
+    }
+  });
+  if (error) { showToast('Registration failed: ' + error.message); return; }
+
+  // If claiming higher rank or place, set pending flags
+  if (data.user && (needsRankConfirm || needsPlaceConfirm)) {
+    await sb.from('profiles').update({
+      claimed_rank:   needsRankConfirm  ? rank  : null,
+      claimed_place:  needsPlaceConfirm ? place : null,
+      rank_pending:   needsRankConfirm,
+      place_pending:  needsPlaceConfirm,
+    }).eq('id', data.user.id);
+  }
+
+  closeModal('register-modal');
+  if (needsRankConfirm || needsPlaceConfirm) {
+    showToast('Registered! Awaiting archmage confirmation for your claims.');
+  } else {
+    showToast('Welcome to the Association!');
+  }
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  closeDropdown();
+  showToast('Signed out');
+}
+
+function toggleProfileDropdown() {
+  if (!currentUser) return;
+  document.getElementById('profile-dropdown').classList.toggle('open');
+}
+function closeDropdown() {
+  document.getElementById('profile-dropdown').classList.remove('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#profile-area') && !e.target.closest('#profile-dropdown')) closeDropdown();
+});
+
+// ═══════════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════════
+function switchTab(btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.page-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('page-' + btn.dataset.page).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════
+//  PAPERS
+// ═══════════════════════════════════════════════════════
+async function loadPapers() {
+  const { data } = await sb.from('papers').select('*').order('points', { ascending: false });
+  cachedPapers = data || [];
+}
+
+async function loadMyRecommendations() {
+  if (!currentUser) { myRecommendations = new Set(); return; }
+  const { data } = await sb.from('recommendations').select('paper_id').eq('user_id', currentUser.id);
+  myRecommendations = new Set((data || []).map(r => r.paper_id));
+}
+
+function recommendWeight() {
+  if (!currentUser) return 0;
+  const w = [1, 10, 50, 300, 1000];
+  return w[RANKS.indexOf(currentUser.rank)] || 1;
+}
+
+function renderPapers() {
+  const search = (document.getElementById('paper-search')?.value || '').toLowerCase();
+  const filter = document.getElementById('paper-filter')?.value || 'all';
+  let list = [...cachedPapers].sort((a,b) => b.points - a.points);
+  if (filter === 'reviewed') list = list.filter(p => p.status === 'reviewed');
+  if (filter === 'pending')  list = list.filter(p => p.status === 'pending');
+  if (search) list = list.filter(p => p.title.toLowerCase().includes(search));
+  const el = document.getElementById('papers-list');
+  if (el) el.innerHTML = list.map(p => paperCardHTML(p)).join('') || '<p style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);padding:2rem">No papers found.</p>';
+  renderAcademicPapers();
+}
+
+function renderAcademicPapers() {
+  const el = document.getElementById('academic-papers-list');
+  if (!el) return;
+  const list = [...cachedPapers].sort((a,b) => b.points - a.points);
+  el.innerHTML = list.map(p => paperCardHTML(p, true)).join('') || '<p style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);padding:2rem">No papers submitted yet.</p>';
+}
+
+function paperCardHTML(p, showAbstract=false) {
+  const isPending = p.status === 'pending';
+  const alreadyRec = myRecommendations.has(p.id);
+  const canRec = currentUser && !alreadyRec;
+  return `<div class="paper-card ${isPending?'pending':''}">
+    <div class="paper-card-body">
+      <div class="paper-card-title">${p.title}</div>
+      <div class="paper-card-meta">${p.author_name||'Unknown'} · ${p.place||'—'}</div>
+      ${showAbstract && p.abstract ? `<p style="font-size:0.85rem;color:var(--ink-light);margin-bottom:0.5rem;font-style:italic">${p.abstract}</p>` : ''}
+      <div class="paper-card-tags">
+        <span class="paper-tag ${isPending?'pending-tag':'reviewed-tag'}">${isPending?'⏳ Pending Review':'✓ Peer Reviewed'}</span>
+        <span class="paper-tag">${p.place||'—'}</span>
+      </div>
+    </div>
+    <div class="paper-card-actions">
+      <button class="recommend-btn" ${canRec?'':'disabled'} onclick="recommendPaper('${p.id}')">
+        ✦ Recommend (+${recommendWeight()})
+      </button>
+      <div class="rec-count">${alreadyRec?'✓ Recommended':''}</div>
+    </div>
+    <div class="paper-points-badge">${p.points.toLocaleString()} pts</div>
+  </div>`;
+}
+
+async function recommendPaper(id) {
+  if (!currentUser) { showToast('Sign in to recommend'); return; }
+  if (myRecommendations.has(id)) { showToast('Already recommended'); return; }
+  const w = recommendWeight();
+  const { error } = await sb.from('recommendations').insert({ paper_id:id, user_id:currentUser.id, weight:w });
+  if (error) { showToast('Error: ' + error.message); return; }
+  await sb.from('papers').update({ points: (cachedPapers.find(p=>p.id===id)?.points||0) + w }).eq('id', id);
+  myRecommendations.add(id);
+  await loadPapers();
+  renderPapers();
+  showToast(`Recommended! +${w} pts`);
+}
+
+function filterPapers() { renderPapers(); }
+
+function openSubmitModal() {
+  if (!currentUser) { showToast('Sign in to submit'); return; }
+  if (RANKS.indexOf(currentUser.rank) < 3) { showToast('Only Grand Mages and above may submit papers'); return; }
+  openModal('submit-paper-modal');
+}
+
+async function submitPaper() {
+  const title    = document.getElementById('paper-title-input').value.trim();
+  const abstract = document.getElementById('paper-abstract-input').value.trim();
+  if (!title) { showToast('Please enter a title'); return; }
+  const { error } = await sb.from('papers').insert({
+    title, abstract,
+    author_id:   currentUser.id,
+    author_name: currentUser.rank + ' ' + currentUser.name,
+    place:       currentUser.place,
+    status:      'pending',
+    points:      0,
+  });
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('submit-paper-modal');
+  document.getElementById('paper-title-input').value = '';
+  document.getElementById('paper-abstract-input').value = '';
+  showToast('Paper submitted for review');
+  await loadPapers(); renderPapers();
+}
+
+async function decayPoints() {
+  await sb.rpc('decay_paper_points');
+  await loadPapers(); renderPapers();
+}
+
+// ═══════════════════════════════════════════════════════
+//  LIBRARY
+// ═══════════════════════════════════════════════════════
+async function loadLibrary() {
+  const { data } = await sb.from('spells').select('*').order('created_at');
+  cachedSpells = {};
+  FLOORS.forEach(f => { cachedSpells[f.id] = []; });
+  (data || []).forEach(s => {
+    if (cachedSpells[s.floor]) cachedSpells[s.floor].push(s);
+  });
+}
+
+function canViewFloor(floorId) {
+  if (!currentUser) return floorId <= 1;
+  const maxFloor = [2,3,4,6,7][RANKS.indexOf(currentUser.rank)] ?? 1;
+  return floorId <= maxFloor;
+}
+
+function canAddToFloor(floor) {
+  if (!currentUser) return false;
+  const minAdd = ['Official Mage','Official Mage','Great Mage','Great Mage','Grand Mage','Grand Mage','Archmage'];
+  return RANKS.indexOf(currentUser.rank) >= RANKS.indexOf(minAdd[floor.id-1]);
+}
+
+// book spine visuals
+const ELEMENT_COLORS = {
+  'Fire':['#8a3820','#5a1a08'],'Water':['#2a5880','#162e50'],
+  'Earth':['#4a5828','#2a3210'],'Ice':['#4a7888','#284858'],
+  'Lightning':['#6a5a10','#3a3008'],'Wind':['#5a7870','#303e38'],
+  'Dark':['#2a1a38','#120a20'],'Light':['#8a7828','#5a4e10'],
+  'Void':['#1a0a28','#0a0414'],'Arcane':['#5a3868','#321c40'],
+  'Nature':['#3a5a28','#1e3010'],'Shadow':['#2a1e30','#120a18'],
+  'Blood':['#6a1a1a','#3a0808'],
+};
+const FALLBACK_PALETTES = [
+  ['#4e6e38','#2e4218'],['#3e5870','#1e3048'],['#6a4a2e','#3e2810'],
+  ['#5e4870','#322840'],['#6a3a2e','#3e1c10'],['#486028','#283410'],
+  ['#603e28','#381e0a'],['#284858','#0e2030'],['#5e4820','#382a08'],
+];
+const SPELL_BOOK_W = [32,36,28,40,34,30,38,44,32,36,28,42,34,38,30];
+const SPELL_BOOK_H = [124,132,116,140,128,120,136,144,126,134,118,142,130,138,122];
+const BOOKS_PER_SHELF = 8;
+
+function getBookColors(spell, idx) {
+  const el = spell?.stats?.Element;
+  if (el && ELEMENT_COLORS[el]) return ELEMENT_COLORS[el];
+  return FALLBACK_PALETTES[idx % FALLBACK_PALETTES.length];
+}
+
+function buildSpineHTML(s, globalIdx, floorId) {
+  const [c1,c2] = getBookColors(s, globalIdx);
+  const w = SPELL_BOOK_W[globalIdx % SPELL_BOOK_W.length];
+  const h = SPELL_BOOK_H[globalIdx % SPELL_BOOK_H.length];
+  const authorShort = (s.author_name||'').split(' ').pop();
+  return `<div class="book-spine"
+    style="background:linear-gradient(175deg,${c1} 0%,${c2} 100%);width:${w}px;height:${h}px"
+    onclick="openSpellBook('${floorId}','${s.id}')"
+    title="${s.name}\n${s.author_name||''}">
+    <div class="book-band book-band-top"></div>
+    <div class="book-spine-title">${s.name}</div>
+    <div class="book-spine-author">${authorShort}</div>
+    <div class="book-band book-band-bottom"></div>
+  </div>`;
+}
+
+function buildShelvesHTML(spells, floorId, canAdd) {
+  const numShelves = Math.max(3, Math.ceil((spells.length + (canAdd?1:0)) / BOOKS_PER_SHELF));
+  let html = '';
+  for (let row=0; row<numShelves; row++) {
+    const rowSpells = spells.slice(row*BOOKS_PER_SHELF, (row+1)*BOOKS_PER_SHELF);
+    let books = rowSpells.map((s,i) => buildSpineHTML(s, row*BOOKS_PER_SHELF+i, floorId)).join('');
+    if (canAdd && row === Math.ceil(spells.length/BOOKS_PER_SHELF)) {
+      books += `<div class="book-spine book-add-slot" style="width:30px;height:110px"
+        onclick="openAddSpell(${floorId})" title="Add spell">
+        <div class="book-spine-title">+</div>
+        <div class="book-spine-author">Add</div>
+      </div>`;
+    }
+    if (!books) books = `<div class="empty-shelf-label">— empty —</div>`;
+    html += `<div class="bookshelf"><div class="shelf-books">${books}</div><div class="shelf-plank"></div></div>`;
+  }
+  return html;
+}
+
+function renderLibrary() {
+  const mainArea = document.getElementById('library-main');
+  if (!mainArea) return;
+
+  const tabsHtml = FLOORS.map(f => {
+    const canView = canViewFloor(f.id);
+    return `<button class="floor-tab-btn ${f.id===currentFloor?'active':''} ${!canView?'locked':''}"
+      onclick="${canView?`switchFloor(${f.id})`:`showToast('Rank required: ${f.minRank}')`}">
+      ${f.name}<span class="floor-tab-tier">${f.tier}${!canView?' 🔒':''}</span>
+    </button>`;
+  }).join('');
+
+  const panelsHtml = FLOORS.map(f => {
+    const canView = canViewFloor(f.id);
+    const spells  = cachedSpells[f.id] || [];
+    const canAdd  = canAddToFloor(f);
+    let inner;
+    if (!canView) {
+      inner = Array(3).fill(0).map(() => `
+        <div class="bookshelf"><div class="shelf-books">
+          <div class="book-spine book-tier-locked" style="width:38px;height:120px">
+            <div class="book-spine-title">${f.tier}</div>
+            <div class="book-spine-author">🔒</div>
+          </div>
+        </div><div class="shelf-plank"></div></div>`).join('');
+    } else {
+      inner = buildShelvesHTML(spells, f.id, canAdd);
+    }
+    return `<div class="floor-panel ${f.id===currentFloor?'active':''}" id="floor-panel-${f.id}">
+      <div class="bookcase">
+        <div class="bookcase-sides"></div>
+        <div class="bookcase-inner">${inner}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  mainArea.innerHTML = `<div class="floor-tabs">${tabsHtml}</div>${panelsHtml}`;
+}
+
+function switchFloor(id) { currentFloor = id; renderLibrary(); }
+
+function openAddSpell(floorId) {
+  if (!currentUser) { showToast('Sign in first'); return; }
+  addingToFloor = floorId;
+  openModal('add-spell-modal');
+}
+
+async function submitSpell() {
+  const name        = document.getElementById('spell-name-input').value.trim();
+  const circleCode  = document.getElementById('spell-code-input').value.trim();
+  const explanation = document.getElementById('spell-explanation-input').value.trim();
+  if (!name) { showToast('Please enter a spell name'); return; }
+  const { error } = await sb.from('spells').insert({
+    name, circle_code: circleCode,
+    explanation: explanation || 'No explanation provided.',
+    floor:       addingToFloor,
+    stats:       {},
+    author_id:   currentUser.id,
+    author_name: currentUser.rank + ' ' + currentUser.name,
+  });
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('add-spell-modal');
+  document.getElementById('spell-name-input').value = '';
+  document.getElementById('spell-code-input').value = '';
+  document.getElementById('spell-explanation-input').value = '';
+  showToast('Spell added to the Library');
+  await loadLibrary(); renderLibrary();
+}
+
+function openSpellBook(floorId, spellId) {
+  const spell = (cachedSpells[parseInt(floorId)]||[]).find(s => s.id === spellId);
+  if (!spell) return;
+  document.getElementById('book-spell-name').textContent  = spell.name;
+  document.getElementById('book-explanation').textContent = spell.explanation || '—';
+  document.getElementById('book-byline').textContent      = '— ' + (spell.author_name || 'Unknown');
+  const leftNum  = document.getElementById('book-page-left-num');
+  const rightNum = document.getElementById('book-page-right-num');
+  if (leftNum)  leftNum.textContent  = FLOORS[parseInt(floorId)-1]?.tier + ' · ' + spell.name;
+  if (rightNum) rightNum.textContent = "Mage's Notes";
+  const sg = document.getElementById('book-stats-grid');
+  const stats = spell.stats || {};
+  sg.innerHTML = Object.keys(stats).length
+    ? Object.entries(stats).map(([k,v]) =>
+        `<div class="spell-stat-item"><div class="spell-stat-label">${k}</div><div class="spell-stat-value">${v}</div></div>`
+      ).join('')
+    : '<div style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);font-size:0.85rem;grid-column:1/-1">No stats recorded.</div>';
+  const frame = document.getElementById('book-circle-frame');
+  frame.innerHTML = spell.circle_code
+    ? spell.circle_code
+    : `<div class="spell-circle-placeholder">⬡<br><br>No spell circle provided.</div>`;
+  document.getElementById('spell-book-view').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSpellBook() {
+  document.getElementById('spell-book-view').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ═══════════════════════════════════════════════════════
+//  MAGE REGISTRY
+// ═══════════════════════════════════════════════════════
+async function loadMages() {
+  const { data } = await sb.from('profiles').select('*').order('name');
+  cachedMages = data || [];
+}
+
+function rankClass(rank) {
+  if (rank==='Archmage')     return 'rank-archmage';
+  if (rank==='Grand Mage')   return 'rank-grand';
+  if (rank==='Great Mage')   return 'rank-great';
+  if (rank==='Official Mage')return 'rank-official';
+  return 'rank-apprentice';
+}
+
+function renderMages() {
+  const search = (document.getElementById('mage-search')?.value||'').toLowerCase();
+  const place  = document.getElementById('place-filter')?.value||'all';
+  const rank   = document.getElementById('rank-filter')?.value||'all';
+  let list = [...cachedMages];
+  if (place!=='all') list = list.filter(m => m.place===place);
+  if (rank!=='all')  list = list.filter(m => m.rank===rank);
+  if (search) list = list.filter(m =>
+    m.name.toLowerCase().includes(search) || (m.place||'').toLowerCase().includes(search));
+  list.sort((a,b) => RANKS.indexOf(b.rank) - RANKS.indexOf(a.rank));
+  const grid = document.getElementById('mage-grid');
+  if (!grid) return;
+  if (!list.length) { grid.innerHTML = `<div style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);padding:2rem">No mages found.</div>`; return; }
+  grid.innerHTML = list.map(m => `
+    <div class="mage-card">
+      <div class="mage-avatar">${(m.name||'?')[0].toUpperCase()}</div>
+      <div class="mage-card-info">
+        <div class="mage-card-name">${m.name}</div>
+        <div class="mage-card-rank">${m.rank}</div>
+        <span class="rank-badge ${rankClass(m.rank)}">${m.rank}</span>
+        <div class="mage-card-place">⌖ ${m.place||'Unaffiliated'}</div>
+        ${m.rank_pending  ? `<div style="font-size:0.55rem;color:#c0392b;margin-top:3px">Rank claim pending: ${m.claimed_rank}</div>` : ''}
+        ${m.place_pending ? `<div style="font-size:0.55rem;color:#c0392b">Affiliation pending: ${m.claimed_place}</div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function filterMages() { renderMages(); }
+
+// ═══════════════════════════════════════════════════════
+//  ALLTIME ESSENTIALS
+// ═══════════════════════════════════════════════════════
+async function loadEssentials() {
+  const { data } = await sb.from('essentials').select('*').order('created_at', { ascending:false });
+  cachedEssentials = data || [];
+}
+
+function renderEssentials() {
+  const list     = document.getElementById('essentials-list');
+  const empty    = document.getElementById('essentials-empty');
+  const adminBar = document.getElementById('essentials-admin-bar');
+  if (!list) return;
+  if (adminBar) adminBar.style.display = currentUser?.is_admin ? 'block' : 'none';
+  list.querySelectorAll('.essential-card').forEach(c => c.remove());
+  if (!cachedEssentials.length) { if (empty) empty.style.display='block'; return; }
+  if (empty) empty.style.display='none';
+  cachedEssentials.forEach(e => {
+    const card = document.createElement('div');
+    card.className = 'essential-card';
+    card.innerHTML = `
+      <div class="essential-star">★</div>
+      <div class="essential-title">${e.title}</div>
+      <div class="essential-meta">${e.author||'—'}</div>
+      ${e.note?`<div class="essential-note">"${e.note}"<br><em style="font-size:0.72rem;opacity:0.6">— Archmage of Destruction</em></div>`:''}
+      ${currentUser?.is_admin?`<button class="essential-remove" onclick="removeEssential('${e.id}')">✕ Remove</button>`:''}`;
+    list.appendChild(card);
+  });
+}
+
+function openEssentialsModal() {
+  if (!currentUser?.is_admin) { showToast('Only the Archmage may pin essentials'); return; }
+  openModal('essentials-modal');
+}
+
+async function pinEssential() {
+  const title  = document.getElementById('ess-title').value.trim();
+  const author = document.getElementById('ess-author').value.trim();
+  const note   = document.getElementById('ess-note').value.trim();
+  if (!title) { showToast('Please enter a title'); return; }
+  const { error } = await sb.from('essentials').insert({ title, author:author||'—', note });
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('essentials-modal');
+  document.getElementById('ess-title').value = '';
+  document.getElementById('ess-author').value = '';
+  document.getElementById('ess-note').value = '';
+  showToast('Pinned to Alltime Essentials');
+  await loadEssentials(); renderEssentials();
+}
+
+async function removeEssential(id) {
+  await sb.from('essentials').delete().eq('id', id);
+  showToast('Removed');
+  await loadEssentials(); renderEssentials();
+}
+
+// ═══════════════════════════════════════════════════════
+//  ADMIN PANEL
+// ═══════════════════════════════════════════════════════
+async function renderAdminPanel() {
+  if (!currentUser?.is_admin) return;
+
+  // Pending ranks
+  const { data: pendingRanks } = await sb.from('profiles')
+    .select('*').eq('rank_pending', true);
+  const rankEl = document.getElementById('pending-ranks');
+  if (rankEl) rankEl.innerHTML = (pendingRanks||[]).length
+    ? (pendingRanks||[]).map(m => `
+        <div class="pending-item">
+          <div class="pending-item-info">
+            <div class="pending-item-name">${m.name}</div>
+            <div class="pending-item-detail">Claims: <strong>${m.claimed_rank}</strong> · Currently: ${m.rank} · ${m.place||'Unaffiliated'}</div>
+          </div>
+          <div class="pending-actions">
+            <button class="btn-approve" onclick="approveRank('${m.id}','${m.claimed_rank}')">Approve</button>
+            <button class="btn-reject"  onclick="rejectRank('${m.id}')">Reject</button>
+          </div>
+        </div>`).join('')
+    : '<p style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);padding:0.5rem">No pending rank claims.</p>';
+
+  // Pending places
+  const { data: pendingPlaces } = await sb.from('profiles')
+    .select('*').eq('place_pending', true);
+  const placeEl = document.getElementById('pending-places');
+  if (placeEl) placeEl.innerHTML = (pendingPlaces||[]).length
+    ? (pendingPlaces||[]).map(m => `
+        <div class="pending-item">
+          <div class="pending-item-info">
+            <div class="pending-item-name">${m.name}</div>
+            <div class="pending-item-detail">Claims affiliation: <strong>${m.claimed_place}</strong></div>
+          </div>
+          <div class="pending-actions">
+            <button class="btn-approve" onclick="approvePlace('${m.id}','${m.claimed_place}')">Approve</button>
+            <button class="btn-reject"  onclick="rejectPlace('${m.id}')">Reject</button>
+          </div>
+        </div>`).join('')
+    : '<p style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);padding:0.5rem">No pending affiliations.</p>';
+
+  // Pending papers
+  const { data: pendingPapers } = await sb.from('papers')
+    .select('*').eq('status','pending');
+  const paperEl = document.getElementById('pending-papers');
+  if (paperEl) paperEl.innerHTML = (pendingPapers||[]).length
+    ? (pendingPapers||[]).map(p => `
+        <div class="pending-item">
+          <div class="pending-item-info">
+            <div class="pending-item-name">${p.title}</div>
+            <div class="pending-item-detail">By: ${p.author_name||'Unknown'} · ${p.place||'—'}</div>
+          </div>
+          <div class="pending-actions">
+            <button class="btn-approve" onclick="approvePaper('${p.id}')">Pass Review</button>
+            <button class="btn-reject"  onclick="rejectPaper('${p.id}')">Reject</button>
+          </div>
+        </div>`).join('')
+    : '<p style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);padding:0.5rem">No papers awaiting review.</p>';
+}
+
+async function approveRank(uid, claimedRank) {
+  const rankIndex = RANKS.indexOf(claimedRank);
+  await sb.from('profiles').update({ rank:claimedRank, claimed_rank:null, rank_pending:false }).eq('id',uid);
+  showToast('Rank approved'); renderAdminPanel(); loadMages().then(renderMages);
+}
+async function rejectRank(uid) {
+  await sb.from('profiles').update({ claimed_rank:null, rank_pending:false }).eq('id',uid);
+  showToast('Rank rejected'); renderAdminPanel();
+}
+async function approvePlace(uid, claimedPlace) {
+  await sb.from('profiles').update({ place:claimedPlace, claimed_place:null, place_pending:false }).eq('id',uid);
+  showToast('Affiliation approved'); renderAdminPanel(); loadMages().then(renderMages);
+}
+async function rejectPlace(uid) {
+  await sb.from('profiles').update({ claimed_place:null, place_pending:false }).eq('id',uid);
+  showToast('Affiliation rejected'); renderAdminPanel();
+}
+async function approvePaper(id) {
+  await sb.from('papers').update({ status:'reviewed', points:1000 }).eq('id',id);
+  showToast('Paper approved — now peer reviewed'); renderAdminPanel();
+  await loadPapers(); renderPapers();
+}
+async function rejectPaper(id) {
+  await sb.from('papers').delete().eq('id',id);
+  showToast('Paper rejected and removed'); renderAdminPanel();
+  await loadPapers(); renderPapers();
+}
+
+// ═══════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════
+function openModal(id)  { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
