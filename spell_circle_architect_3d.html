@@ -5600,5 +5600,23 @@ try{
   document.body.innerHTML+='<div style="position:fixed;top:0;left:0;right:0;background:#300;color:#f88;padding:1rem;font-size:12px;z-index:9999;word-break:break-all;">JS Error: '+err.message+'<br>'+err.stack+'</div>';
 }
 </script>
+<script>
+// ── WMA Library integration: receive formula + color from parent ──
+window.addEventListener('message', function(e) {
+  if (!e.data || e.data.type !== 'loadFormula') return;
+  try {
+    // Set accent color
+    if (e.data.color) {
+      document.documentElement.style.setProperty('--ac', e.data.color);
+    }
+    // Load formula into input and trigger parse
+    const fi = document.getElementById('formula-input');
+    if (fi && e.data.formula) {
+      fi.value = e.data.formula;
+      fi.dispatchEvent(new KeyboardEvent('keydown', { key:'Enter', bubbles:true }));
+    }
+  } catch(err) { console.log('WMA postMessage handler error:', err); }
+});
+</script>
 </body>
 </html>
