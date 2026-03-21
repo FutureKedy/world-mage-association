@@ -1699,7 +1699,7 @@ html, body {
   </div>
   <div class="dropdown-item" onclick="closeDropdown(); openProfile()">My Profile</div>
   <div class="dropdown-item" onclick="closeDropdown(); openProfile()">My Submissions</div>
-  <div class="dropdown-item" onclick="closeDropdown(); document.querySelector('[data-page=settings]').click()">Settings</div>
+  <div class="dropdown-item" onclick="closeDropdown(); openSettings()">Settings</div>
   <div class="dropdown-item danger" onclick="logout()">Sign Out</div>
 </div>
 
@@ -1834,7 +1834,6 @@ html, body {
   <button class="tab-btn" data-page="registry" onclick="switchTab(this)">Mage Registry</button>
   <button class="tab-btn" data-page="discussions" onclick="switchTab(this)">⟨ General Discussions ⟩</button>
   <button class="tab-btn admin-tab" data-page="admin" id="admin-tab" style="display:none" onclick="switchTab(this)">⚑ Archmage Panel</button>
-  <button class="tab-btn" data-page="settings" id="settings-tab" style="display:none" onclick="switchTab(this)">⚙ Settings</button>
 </nav>
 
 <!-- ═══════════════════════ MAIN CONTENT ═══════════════════════ -->
@@ -2135,12 +2134,18 @@ html, body {
     </div>
   </div>
 
-  <!-- ══════════════ SETTINGS ══════════════ -->
-  <div class="page-panel" id="page-settings">
-    <h1 class="section-title"><span class="ornament">⚙</span> Settings</h1>
-    <p class="section-subtitle">Manage your account, rank, and institutional affiliation</p>
+  <!-- ══════════════ SETTINGS removed from tabs — now an overlay ══════════════ -->
 
-    <div style="max-width:640px;display:flex;flex-direction:column;gap:1.5rem">
+</main>
+
+<!-- ═══════════════════════ SETTINGS OVERLAY ═══════════════════════ -->
+<div id="settings-overlay" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(20,12,4,0.78);backdrop-filter:blur(3px);overflow-y:auto">
+  <div style="max-width:680px;margin:2rem auto;padding:0 1rem 3rem">
+    <div style="text-align:right;margin-bottom:0.8rem">
+      <button onclick="closeSettings()" style="font-family:var(--font-display);font-size:0.6rem;letter-spacing:0.15em;color:rgba(240,200,100,0.75);background:transparent;border:1px solid rgba(240,200,100,0.3);padding:0.3rem 0.9rem;border-radius:3px;cursor:pointer;text-transform:uppercase">✕ Close</button>
+    </div>
+    <div style="background:linear-gradient(160deg,#f5f0e0,#ede5c8);border:2px solid #a67c2e;border-radius:8px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.6);padding:2rem">
+      <h2 style="font-family:var(--font-display);font-size:1rem;letter-spacing:0.2em;color:var(--green-deep);margin-bottom:1.5rem;text-align:center">⚙ Settings</h2>
 
       <!-- Change Password -->
       <div class="admin-section">
@@ -2157,11 +2162,11 @@ html, body {
       </div>
 
       <!-- Request Rank Up -->
-      <div class="admin-section">
+      <div class="admin-section" style="margin-top:1.2rem">
         <div class="admin-section-title">⬆ Apply for Rank Promotion</div>
         <p style="font-family:var(--font-italic);font-style:italic;font-size:0.88rem;color:var(--ink-light);margin-bottom:0.8rem">
           Your current rank: <strong id="settings-current-rank">—</strong><br>
-          Promotion must be confirmed by an Archmage or a confirmed mage of equal or greater rank from your institution.
+          Promotion must be confirmed by an Archmage or a confirmed mage of equal or greater rank.
         </p>
         <div class="form-group">
           <label class="form-label">Requested Rank</label>
@@ -2172,49 +2177,41 @@ html, body {
             <option value="Grand Mage">Grand Mage</option>
             <option value="Archmage">Archmage</option>
           </select>
-          <p class="form-note">You may only request a rank higher than your current one. If you already have a pending request it will be replaced.</p>
         </div>
         <div id="settings-rank-pending-note" style="display:none;font-family:var(--font-italic);font-style:italic;font-size:0.82rem;color:#c0392b;margin-bottom:0.6rem">
-          ⏳ You have a pending rank request: <strong id="settings-rank-pending-val"></strong>
+          ⏳ Pending request: <strong id="settings-rank-pending-val"></strong>
         </div>
         <button class="btn-primary" onclick="requestRankUp()">Submit Rank Request</button>
       </div>
 
-      <!-- Change Institutional Affiliation -->
-      <div class="admin-section">
+      <!-- Change Affiliation -->
+      <div class="admin-section" style="margin-top:1.2rem">
         <div class="admin-section-title">⌖ Change Institutional Affiliation</div>
         <p style="font-family:var(--font-italic);font-style:italic;font-size:0.88rem;color:var(--ink-light);margin-bottom:0.8rem">
           Current affiliation: <strong id="settings-current-place">—</strong><br>
-          A change must be confirmed by an Archmage or a confirmed mage of equal or greater rank at the new institution.
+          Must be confirmed by an Archmage or senior mage at the new institution.
         </p>
         <div class="form-group">
           <label class="form-label">Requested Institution</label>
           <select class="form-select" id="settings-place-request">
             <option value="">— Select institution —</option>
-            <option>Akademia</option>
-            <option>Imperial Court Mages</option>
-            <option>Imperial Magic Corps</option>
-            <option>Tower of Water</option>
-            <option>Tower of Ice</option>
-            <option>Tower of Fire</option>
-            <option>Tower of Earth</option>
-            <option>Tower of Lightning</option>
-            <option>Tower of Solitude</option>
-            <option>Clock Tower</option>
+            <option>Akademia</option><option>Imperial Court Mages</option>
+            <option>Imperial Magic Corps</option><option>Tower of Water</option>
+            <option>Tower of Ice</option><option>Tower of Fire</option>
+            <option>Tower of Earth</option><option>Tower of Lightning</option>
+            <option>Tower of Solitude</option><option>Clock Tower</option>
             <option>Magic Corps of Thorns</option>
           </select>
-          <p class="form-note">If you already have a pending affiliation request it will be replaced.</p>
         </div>
         <div id="settings-place-pending-note" style="display:none;font-family:var(--font-italic);font-style:italic;font-size:0.82rem;color:#c0392b;margin-bottom:0.6rem">
-          ⏳ Pending affiliation: <strong id="settings-place-pending-val"></strong>
+          ⏳ Pending: <strong id="settings-place-pending-val"></strong>
         </div>
         <button class="btn-primary" onclick="requestPlaceChange()">Submit Affiliation Request</button>
       </div>
-
     </div>
   </div>
+</div>
 
-</main>
 
 <!-- ═══════════════════════ SPELL BOOK VIEW (fullscreen) ═══════════════════════ -->
 <div class="spell-book-view" id="spell-book-view">
@@ -2449,6 +2446,8 @@ window.postDiscMessage    = postDiscMessage;
 window.changePassword     = changePassword;
 window.requestRankUp      = requestRankUp;
 window.requestPlaceChange = requestPlaceChange;
+window.openSettings       = openSettings;
+window.closeSettings      = closeSettings;
 window.openProfile       = openProfile;
 window.closeProfile      = closeProfile;
 window.approveRank      = approveRank;
@@ -3180,14 +3179,12 @@ function renderLoggedIn() {
   const badge = document.getElementById('profile-pending-badge');
   badge.style.display = (currentUser.rank_pending || currentUser.place_pending) ? 'block' : 'none';
   document.getElementById('admin-tab').style.display = currentUser.is_admin ? '' : 'none';
-  document.getElementById('settings-tab').style.display = '';
 }
 
 function renderLoggedOut() {
   document.getElementById('profile-display-logged-out').style.display = '';
   document.getElementById('profile-display-logged-in').style.display  = 'none';
   document.getElementById('admin-tab').style.display = 'none';
-  document.getElementById('settings-tab').style.display = 'none';
 }
 
 function openLoginModal()    { closeDropdown(); openModal('login-modal'); }
@@ -3296,12 +3293,16 @@ function recommendWeight() {
 function renderPapers() {
   const search = (document.getElementById('paper-search')?.value || '').toLowerCase();
   const filter = document.getElementById('paper-filter')?.value || 'all';
-  let list = [...cachedPapers].sort((a,b) => b.points - a.points);
-  if (filter === 'reviewed') list = list.filter(p => p.status === 'reviewed');
-  if (filter === 'pending')  list = list.filter(p => p.status === 'pending');
+  // Hot Topics default shows only reviewed papers
+  let list;
+  if (filter === 'pending') list = [...cachedPapers].filter(p => p.status === 'pending');
+  else if (filter === 'all') list = [...cachedPapers];
+  else list = [...cachedPapers].filter(p => p.status === 'reviewed');
+  list.sort((a,b) => b.points - a.points);
   if (search) list = list.filter(p => p.title.toLowerCase().includes(search));
   const el = document.getElementById('papers-list');
-  if (el) el.innerHTML = list.map(p => paperCardHTML(p)).join('') || '<p style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);padding:2rem">No papers found.</p>';
+  if (el) el.innerHTML = list.map(p => paperCardHTML(p)).join('') ||
+    '<p style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);padding:2rem">No peer-reviewed papers yet. Papers appear here after an Archmage passes them.</p>';
   renderAcademicPapers();
 }
 
@@ -3309,30 +3310,32 @@ function renderAcademicPapers() {
   const el = document.getElementById('academic-papers-list');
   if (!el) return;
   const list = [...cachedPapers].sort((a,b) => b.points - a.points);
-  el.innerHTML = list.map(p => paperCardHTML(p, true)).join('') || '<p style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);padding:2rem">No papers submitted yet.</p>';
+  el.innerHTML = list.map(p => paperCardHTML(p, true)).join('') ||
+    '<p style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);padding:2rem">No papers submitted yet.</p>';
 }
 
 function paperCardHTML(p, showAbstract=false) {
-  const isPending = p.status === 'pending';
+  const isPending  = p.status !== 'reviewed';
   const alreadyRec = myRecommendations.has(p.id);
-  const canRec = currentUser && !alreadyRec;
+  const canRec     = currentUser && !alreadyRec && !isPending;
+  const hasFile    = p.file_url && p.file_url.trim();
   return `<div class="paper-card ${isPending?'pending':''}">
     <div class="paper-card-body">
-      <div class="paper-card-title">${p.title}</div>
-      <div class="paper-card-meta">${p.author_name||'Unknown'} · ${p.place||'—'}</div>
-      ${showAbstract && p.abstract ? `<p style="font-size:0.85rem;color:var(--ink-light);margin-bottom:0.5rem;font-style:italic">${p.abstract}</p>` : ''}
+      <div class="paper-card-title" ${hasFile ? `style="cursor:pointer;text-decoration:underline;text-underline-offset:3px" onclick="window.open('${p.file_url}','_blank')"` : ''}>${p.title}${hasFile ? ' <span style="font-size:0.7rem;opacity:0.6">\u2197</span>' : ''}</div>
+      <div class="paper-card-meta">${p.author_name||'Unknown'} \u00b7 ${p.place||'\u2014'}</div>
+      ${showAbstract && p.abstract ? `<p style="font-size:0.85rem;color:var(--ink-light);margin:0.4rem 0;font-style:italic">${p.abstract}</p>` : ''}
       <div class="paper-card-tags">
-        <span class="paper-tag ${isPending?'pending-tag':'reviewed-tag'}">${isPending?'⏳ Pending Review':'✓ Peer Reviewed'}</span>
-        <span class="paper-tag">${p.place||'—'}</span>
+        <span class="paper-tag ${isPending?'pending-tag':'reviewed-tag'}">${isPending?'\u23f3 Pending Review':'\u2713 Peer Reviewed'}</span>
+        ${p.place ? `<span class="paper-tag">${p.place}</span>` : ''}
       </div>
     </div>
     <div class="paper-card-actions">
       <button class="recommend-btn" ${canRec?'':'disabled'} onclick="recommendPaper('${p.id}')">
-        ✦ Recommend (+${recommendWeight()})
+        \u2726 Recommend (+${recommendWeight()})
       </button>
-      <div class="rec-count">${alreadyRec?'✓ Recommended':''}</div>
+      <div class="rec-count">${alreadyRec?'\u2713 Recommended':''}</div>
     </div>
-    <div class="paper-points-badge">${p.points.toLocaleString()} pts</div>
+    <div class="paper-points-badge">${(p.points||0).toLocaleString()} pts</div>
   </div>`;
 }
 
@@ -3340,9 +3343,13 @@ async function recommendPaper(id) {
   if (!currentUser) { showToast('Sign in to recommend'); return; }
   if (myRecommendations.has(id)) { showToast('Already recommended'); return; }
   const w = recommendWeight();
-  const { error } = await sb.from('recommendations').insert({ paper_id:id, user_id:currentUser.id, weight:w });
-  if (error) { showToast('Error: ' + error.message); return; }
-  await sb.from('papers').update({ points: (cachedPapers.find(p=>p.id===id)?.points||0) + w }).eq('id', id);
+  const { error: recErr } = await sb.from('recommendations')
+    .insert({ paper_id: id, user_id: currentUser.id, weight: w });
+  if (recErr) { showToast('Error: ' + recErr.message); return; }
+  const paper = cachedPapers.find(p => p.id === id);
+  const newPoints = (paper?.points || 0) + w;
+  const { error: updErr } = await sb.from('papers').update({ points: newPoints }).eq('id', id);
+  if (updErr) { showToast('Error updating points: ' + updErr.message); return; }
   myRecommendations.add(id);
   await loadPapers();
   renderPapers();
@@ -3350,6 +3357,7 @@ async function recommendPaper(id) {
 }
 
 function filterPapers() { renderPapers(); }
+
 
 function openSubmitModal() {
   if (!currentUser) { showToast('Sign in to submit'); return; }
@@ -3855,14 +3863,20 @@ async function rejectPlace(uid) {
   showToast('Affiliation rejected'); renderAdminPanel();
 }
 async function approvePaper(id) {
-  await sb.from('papers').update({ status:'reviewed', points:1000 }).eq('id',id);
-  showToast('Paper approved — now peer reviewed'); renderAdminPanel();
-  await loadPapers(); renderPapers();
+  const { error } = await sb.from('papers').update({ status: 'reviewed', points: 1000 }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Paper approved — now peer reviewed');
+  await loadPapers();
+  renderPapers();
+  await renderAdminPanel();
 }
 async function rejectPaper(id) {
-  await sb.from('papers').delete().eq('id',id);
-  showToast('Paper rejected and removed'); renderAdminPanel();
-  await loadPapers(); renderPapers();
+  const { error } = await sb.from('papers').delete().eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Paper rejected and removed');
+  await loadPapers();
+  renderPapers();
+  await renderAdminPanel();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -4140,6 +4154,17 @@ function closeProfile() {
 // ═══════════════════════════════════════════════════════
 //  SETTINGS
 // ═══════════════════════════════════════════════════════
+function openSettings() {
+  if (!currentUser) { showToast('Sign in first'); return; }
+  populateSettings();
+  document.getElementById('settings-overlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+function closeSettings() {
+  document.getElementById('settings-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
 function populateSettings() {
   if (!currentUser) return;
   const cr = document.getElementById('settings-current-rank');
