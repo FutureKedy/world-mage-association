@@ -2165,23 +2165,16 @@ html, body {
 
 <!-- ═══════════════════════ ADD SPELL MODAL ═══════════════════════ -->
 <div class="modal-overlay" id="add-spell-modal">
-  <div class="modal-box" style="max-width:800px;width:96%">
+  <div class="modal-box" style="max-width:600px;width:96%">
     <div class="modal-title">✦ Add Spell to Library</div>
     <div class="form-group">
       <label class="form-label">Spell Name</label>
       <input class="form-input" id="spell-name-input" type="text" placeholder="Name of the spell…">
     </div>
-    <!-- Embedded Spell Architect -->
-    <div class="form-group">
-      <label class="form-label">Design your Spell Circle below — then copy the export code</label>
-      <div style="width:100%;height:340px;border:1px solid var(--cream-border);border-radius:3px;overflow:hidden;background:#05030a;margin-bottom:0.5rem">
-        <iframe src="spell_circle_architect_3d.html" style="width:100%;height:100%;border:none" title="Spell Architect"></iframe>
-      </div>
-    </div>
     <div class="form-group">
       <label class="form-label">Spell Circle Export Code</label>
-      <textarea class="form-textarea" id="spell-code-input" placeholder="Paste the export code from Spell Architect here…" style="min-height:70px"></textarea>
-      <p class="form-note">In Spell Architect, use the export button (top-right) to copy the code, then paste it above.</p>
+      <textarea class="form-textarea" id="spell-code-input" placeholder="Paste the export code from Spell Architect here…" style="min-height:90px"></textarea>
+      <p class="form-note">Go to the <strong>Spell Architect</strong> tab, design your circle, then use the export button (top-right corner) to copy the code and paste it above.</p>
     </div>
     <div class="form-group">
       <label class="form-label">Spell Explanation & Thoughts</label>
@@ -2359,7 +2352,7 @@ window.closeSpellBook   = closeSpellBook;
 window.openEssentialsModal = openEssentialsModal;
 window.pinEssential     = pinEssential;
 window.removeEssential  = removeEssential;
-window.postMessage        = postDiscMessage;
+window.deleteMessage      = deleteMessage;
 window.openProfile       = openProfile;
 window.closeProfile      = closeProfile;
 window.approveRank      = approveRank;
@@ -3112,10 +3105,12 @@ function renderMessages(msgs) {
 }
 
 function buildMsgEl(m) {
-  const isOwn = currentUser && m.user_id === currentUser.id;
-  const time  = new Date(m.created_at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-  const div   = document.createElement('div');
+  const isOwn   = currentUser && m.user_id === currentUser.id;
+  const isAdmin = currentUser?.is_admin;
+  const time    = new Date(m.created_at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+  const div     = document.createElement('div');
   div.className = 'disc-msg' + (isOwn ? ' own' : '');
+  div.dataset.id = m.id;
   div.innerHTML = `
     <div class="disc-msg-avatar">${(m.author_name||'?')[0].toUpperCase()}</div>
     <div class="disc-msg-body">
@@ -3124,20 +3119,43 @@ function buildMsgEl(m) {
         <span class="disc-msg-rank">${m.author_rank||''}</span>
         <span class="disc-msg-place">${m.author_place ? '· ' + m.author_place : ''}</span>
         <span class="disc-msg-time">${time}</span>
+        ${isAdmin ? `<button onclick="deleteMessage('${m.id}')" style="margin-left:0.5rem;font-family:var(--font-display);font-size:0.42rem;letter-spacing:0.08em;color:#c0392b;background:transparent;border:1px solid rgba(192,57,43,0.3);padding:1px 6px;border-radius:2px;cursor:pointer">✕</button>` : ''}
       </div>
       <div class="disc-msg-text">${escapeHTML(m.content)}</div>
     </div>`;
   return div;
 }
 
+async function deleteMessage(id) {
+  await sb.from('messages').delete().eq('id', id);
+  document.querySelector(`.disc-msg[data-id="${id}"]`)?.remove();
+  const feed = document.getElementById('disc-feed');
+  if (feed && !feed.querySelector('.disc-msg')) {
+    const empty = document.getElementById('disc-empty');
+    if (empty) empty.style.display = 'flex';
+  }
+  showToast('Message deleted');
+}
+
 function escapeHTML(str) {
   return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ── swear word filter ──
+const BANNED = ['fuck','shit','ass','bitch','cunt','dick','piss','cock','bastard','damn','crap','whore','slut','fag','retard','nigger','nigga'];
+function containsBanned(text) {
+  const lower = text.toLowerCase().replace(/[^a-z]/g,' ');
+  return BANNED.some(w => lower.split(' ').includes(w));
+}
+
 function setupRealtimeMessages() {
-  if (discChannel) discChannel.unsubscribe();
-  discChannel = sb.channel('messages-feed')
-    .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, payload => {
+  if (discChannel) { sb.removeChannel(discChannel); discChannel = null; }
+  discChannel = sb.channel('public-messages', {
+    config: { broadcast: { self: true } }
+  })
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'messages'
+    }, payload => {
       const feed  = document.getElementById('disc-feed');
       const empty = document.getElementById('disc-empty');
       if (!feed) return;
@@ -3145,10 +3163,14 @@ function setupRealtimeMessages() {
       feed.appendChild(buildMsgEl(payload.new));
       feed.scrollTop = feed.scrollHeight;
     })
-    .on('postgres_changes', { event:'DELETE', schema:'public', table:'messages' }, () => {
-      loadMessages(); // full wipe happened
+    .on('postgres_changes', {
+      event: 'DELETE', schema: 'public', table: 'messages'
+    }, () => {
+      loadMessages();
     })
-    .subscribe();
+    .subscribe((status) => {
+      console.log('Realtime status:', status);
+    });
 }
 
 async function postDiscMessage() {
@@ -3157,6 +3179,7 @@ async function postDiscMessage() {
   const content = ta.value.trim();
   if (!content) { showToast('Write something first'); return; }
   if (content.length > 500) { showToast('Maximum 500 characters'); return; }
+  if (containsBanned(content)) { showToast('Your message contains forbidden language'); return; }
 
   const { error } = await sb.from('messages').insert({
     user_id:      currentUser.id,
@@ -3168,6 +3191,12 @@ async function postDiscMessage() {
   if (error) { showToast('Error: ' + error.message); return; }
   ta.value = '';
   document.getElementById('disc-char-count').textContent = '0 / 500';
+  // fallback — manually reload if realtime hasn't kicked in yet
+  setTimeout(() => loadMessages().then(() => {
+    const feed = document.getElementById('disc-feed');
+    const msgs = feed?.querySelectorAll('.disc-msg');
+    if (!msgs?.length) renderMessages([]); // empty check
+  }), 400);
 }
 
 // char counter
