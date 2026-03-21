@@ -2327,7 +2327,15 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const SUPABASE_URL = 'https://ppgwympbjxhmcytqgfjf.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwZ3d5bXBianhobWN5dHFnZmpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjg0MjIsImV4cCI6MjA4OTYwNDQyMn0.CY4E-c0T_As4LzxkwE2jtDgg4jupsTZ1K5e-5muTizY';
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    storageKey: 'wma-auth',
+    storage: window.localStorage,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  }
+});
 
 // ─── expose needed functions to global scope (onclick= handlers) ───
 window.switchTab        = switchTab;
@@ -2391,23 +2399,36 @@ let myRecommendations = new Set(); // paper ids I already recommended
 //  INIT
 // ═══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
-  // listen for auth changes
+  // check for existing session immediately on load
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
+    await loadCurrentUser(session.user.id);
+  } else {
+    renderLoggedOut();
+  }
+  await loadAll();
+  updateDiscComposer();
+
+  // then keep listening for changes (login/logout)
   sb.auth.onAuthStateChange(async (event, session) => {
-    if (session?.user) {
+    if (event === 'SIGNED_IN' && session?.user) {
       await loadCurrentUser(session.user.id);
-    } else {
+      await loadAll();
+      updateDiscComposer();
+    } else if (event === 'SIGNED_OUT') {
       currentUser = null;
       renderLoggedOut();
+      await loadAll();
+      updateDiscComposer();
     }
-    await loadAll();
-  updateDiscComposer();
   });
+
   // close modals on overlay click
   document.querySelectorAll('.modal-overlay').forEach(m => {
     m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
   });
   // start point decay timer
-  setInterval(decayPoints, 3600000); // every real hour
+  setInterval(decayPoints, 3600000);
 });
 
 async function loadAll() {
@@ -2846,7 +2867,10 @@ function closeSpellBook() {
 //  MAGE REGISTRY
 // ═══════════════════════════════════════════════════════
 async function loadMages() {
-  const { data } = await sb.from('profiles').select('*').order('name');
+  const { data, error } = await sb.from('profiles')
+    .select('id, name, rank, place, rank_pending, place_pending, claimed_rank, claimed_place, is_admin')
+    .order('name');
+  if (error) { console.error('loadMages error:', error.message); cachedMages = []; return; }
   cachedMages = data || [];
 }
 
