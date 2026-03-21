@@ -827,16 +827,13 @@ html, body {
 }
 
 .spell-circle-frame {
-  width:100%; max-width:340px;
+  width:100%; max-width:380px;
   aspect-ratio:1;
-  border:1px solid var(--cream-border);
-  border-radius:50%;
-  background:rgba(240,232,200,0.5);
+  background:#05030a;
   display:flex; align-items:center; justify-content:center;
-  margin:1rem auto 1.2rem;
-  overflow:hidden;
+  margin:0.8rem auto 1.2rem;
+  overflow:visible;
   position:relative; z-index:1;
-  box-shadow:0 2px 12px rgba(0,0,0,0.1), inset 0 0 20px rgba(100,70,20,0.06);
 }
 .spell-circle-placeholder {
   text-align:center;
@@ -2165,15 +2162,14 @@ html, body {
 
 <!-- ═══════════════════════ ADD SPELL MODAL ═══════════════════════ -->
 <div class="modal-overlay" id="add-spell-modal">
-  <div class="modal-box" style="max-width:640px;width:96%">
+  <div class="modal-box" style="max-width:580px;width:96%">
     <div class="modal-title">✦ Add Spell to Library</div>
 
     <div style="background:var(--parchment-dark);border:1px solid var(--cream-border);border-radius:4px;padding:0.8rem 1rem;margin-bottom:1rem;font-family:var(--font-italic);font-style:italic;font-size:0.82rem;color:var(--ink-light)">
       <strong style="font-family:var(--font-display);font-style:normal;font-size:0.6rem;letter-spacing:0.12em;color:var(--gold)">HOW TO ADD A SPELL</strong><br>
       1. Go to the <strong>Spell Architect</strong> tab and design your circle.<br>
-      2. Open the left stats panel — copy each stat value below.<br>
-      3. Click <strong>⊕ Copy Formula</strong> in the right drawer and paste it below.<br>
-      4. Note the accent color (the glowing color of your circle).
+      2. In the right drawer, click <strong>⊕ Copy Formula</strong> and paste it below.<br>
+      3. The circle and all stats are computed automatically.
     </div>
 
     <div class="form-group">
@@ -2182,30 +2178,8 @@ html, body {
     </div>
 
     <div class="form-group">
-      <label class="form-label">Formula (from ⊕ Copy Formula button)</label>
-      <textarea class="form-textarea" id="spell-code-input" placeholder="{ water , expand , compression compression }…" style="min-height:60px;font-family:monospace;font-size:0.82rem"></textarea>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Circle Accent Color</label>
-      <div style="display:flex;gap:0.6rem;align-items:center">
-        <input type="color" id="spell-color-input" value="#7a9dbb" style="width:48px;height:32px;border:1px solid var(--cream-border);border-radius:3px;cursor:pointer;background:none;padding:2px">
-        <span style="font-family:var(--font-italic);font-style:italic;font-size:0.78rem;color:var(--ink-light)">Match the glowing color of your circle in Spell Architect</span>
-      </div>
-    </div>
-
-    <div style="font-family:var(--font-display);font-size:0.55rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);margin-bottom:0.5rem">Spell Stats (from left stats panel)</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:1rem">
-      <div><label class="form-label">Mana Requirement</label><input class="form-input" id="stat-mana" placeholder="—"></div>
-      <div><label class="form-label">Thaumir Requirement</label><input class="form-input" id="stat-thaumir" placeholder="—"></div>
-      <div><label class="form-label">Chance of Success</label><input class="form-input" id="stat-success" placeholder="—"></div>
-      <div><label class="form-label">Damage</label><input class="form-input" id="stat-dmg" placeholder="—"></div>
-      <div><label class="form-label">Speed</label><input class="form-input" id="stat-speed" placeholder="—"></div>
-      <div><label class="form-label">Damage Area</label><input class="form-input" id="stat-area" placeholder="—"></div>
-      <div><label class="form-label">Spell's Size</label><input class="form-input" id="stat-size" placeholder="—"></div>
-      <div><label class="form-label">Spell's Health</label><input class="form-input" id="stat-health" placeholder="—"></div>
-      <div><label class="form-label">Spell's Weight</label><input class="form-input" id="stat-weight" placeholder="—"></div>
-      <div><label class="form-label">Total Healing</label><input class="form-input" id="stat-heal" placeholder="—"></div>
+      <label class="form-label">Formula (from ⊕ Copy Formula button in Spell Architect)</label>
+      <textarea class="form-textarea" id="spell-code-input" placeholder="{ water , expand , compression compression }…" style="min-height:70px;font-family:monospace;font-size:0.82rem"></textarea>
     </div>
 
     <div class="form-group">
@@ -2398,6 +2372,608 @@ window.rejectPaper      = rejectPaper;
 
 
 // ═══════════════════════════════════════════════════════
+//  SPELL CIRCLE ENGINE — ported from Spell Architect
+//  Parses formula string → renders static SVG + computes stats
+// ═══════════════════════════════════════════════════════
+const SCE = (() => {
+  // ── constants ──
+  const CX=230,CY=230;
+  const RING_W=53,CORE_R=24;
+  const SC_RING_W=37,SC_CORE_R=17;
+  const MANA_COSTS=[15,15,30,60,120,240,480,960];
+  const SC_MANA_COSTS=[5,5,10,20,40,80,160,320];
+  const THAUMIR_COSTS={'Elemental':1,'Control':3,'Directional':2,'Abstract':10,'Complex':5,'Simple':1,'High':15,'Personal':0};
+  const ELEMENTAL_DMG={'Fire':10,'Lightning':15,'Air':5,'Water':5,'Earth':0,'Ice':5};
+  const VOWELS=new Set(['a','e','i','o','u']);
+
+  function mainR(n){return CORE_R+n*RING_W;}
+  function scR(n){return SC_CORE_R+n*SC_RING_W;}
+
+  // ── rune data ──
+  const RUNES={
+    'Elemental':[{name:'Fire',sym:'△',ck:'fire'},{name:'Water',sym:'○',ck:'water'},{name:'Air',sym:'≋',ck:'air'},{name:'Earth',sym:'□',ck:'earth'},{name:'Ice',sym:'⬡',ck:'ice'},{name:'Lightning',sym:'⚡',ck:'lightning'}],
+    'Control':[{name:'Compression',sym:'⊛',ck:'base'},{name:'Explosion',sym:'✸',ck:'base'},{name:'Push',sym:'⇥',ck:'base'},{name:'Expand',sym:'⊕',ck:'base'},{name:'Reduce',sym:'⊖',ck:'base'},{name:'Speedup',sym:'⟳',ck:'base'},{name:'Slow',sym:'⟲',ck:'base'},{name:'Wait',sym:'◇',ck:'base'},{name:'Hold',sym:'⊠',ck:'base'},{name:'Stop',sym:'◻',ck:'base'},{name:'Touch',sym:'◎',ck:'base'},{name:'Split',sym:'⋔',ck:'base'},{name:'Merge',sym:'⋈',ck:'base'},{name:'Rotate',sym:'↻',ck:'base'},{name:'Liquify',sym:'≈',ck:'base'},{name:'Solidify',sym:'⬢',ck:'base'},{name:'Vaporize',sym:'∿',ck:'base'},{name:'Condense',sym:'⇊',ck:'base'},{name:'Crystallize',sym:'❋',ck:'base'},{name:'Accelerate',sym:'⇉',ck:'base'},{name:'Bend',sym:'⌒',ck:'base'},{name:'Radiate',sym:'✳',ck:'base'},{name:'Lift',sym:'⇑',ck:'base'}],
+    'Directional':[{name:'Cold',sym:'❄',ck:'cold'},{name:'Heat',sym:'♨',ck:'heat'},{name:'Right',sym:'→',ck:'base'},{name:'Left',sym:'←',ck:'base'},{name:'Up',sym:'↑',ck:'base'},{name:'Down',sym:'↓',ck:'base'},{name:'Tougher',sym:'⬛',ck:'tougher'},{name:'Shatter',sym:'✦',ck:'base'},{name:'Direction',sym:'⊹',ck:'base'},{name:'Sharp',sym:'◁',ck:'base'},{name:'Pointy',sym:'▷',ck:'base'},{name:'Dull',sym:'◈',ck:'base'},{name:'Path',sym:'⟿',ck:'base'},{name:'Area',sym:'▣',ck:'base'}],
+    'Complex':[{name:'Follow',sym:'⤳',ck:'base'},{name:'See',sym:'◉',ck:'base'},{name:'Distinguish',sym:'⊘',ck:'base'},{name:'Take()',sym:'⇲',ck:'base'},{name:'Shape',sym:'⬠',ck:'base'},{name:'Mark',sym:'⊕',ck:'base'},{name:'Self',sym:'☯',ck:'base'},{name:'Levitate',sym:'⇡',ck:'base'},{name:'Transfer',sym:'⇄',ck:'base'}],
+    'Abstract':[{name:'Open',sym:'⌀',ck:'base'},{name:'Close',sym:'⊗',ck:'base'},{name:"Don't",sym:'⊘',ck:'base'},{name:'Contain',sym:'⬭',ck:'base'},{name:'Give()',sym:'⇱',ck:'base'},{name:'Life',sym:'❤',ck:'base'},{name:'Coat',sym:'⬔',ck:'base'}],
+    'Simple':[{name:'Connect',sym:'⊟',ck:'base'},{name:'Exit',sym:'⇏',ck:'base'},{name:'Mana',sym:'✦',ck:'base'},{name:'Infuse',sym:'⊕',ck:'base'},{name:'1()',sym:'①',ck:'base',gateOnly:true}],
+    'High':[{name:'Shape(complex)',sym:'⬡',ck:'base'},{name:'Increase',sym:'⟰',ck:'base'},{name:'Directional Movement',sym:'⇛',ck:'base'},{name:'Number()',sym:'⊞',ck:'base'},{name:'Re-()',sym:'↺',ck:'base'},{name:'Convert Material',sym:'⇌',ck:'base'}],
+    'Personal':[],
+  };
+
+  // ── colour palettes ──
+  const PAL={
+    mana:     {s:'#7a9dbb',f:'rgba(90,130,170,.09)',g:'rgba(100,145,185,.20)',l:'#9ab8d0',ci:'#c8dde8'},
+    fire:     {s:'#ff6600',f:'rgba(255,80,0,.10)',  g:'rgba(255,80,0,.28)',   l:'#ff8844',ci:'#ffcc44'},
+    water:    {s:'#3399ff',f:'rgba(40,130,255,.10)',g:'rgba(40,130,255,.22)', l:'#66aaff',ci:'#aaddff'},
+    ice:      {s:'#88ddff',f:'rgba(100,210,255,.09)',g:'rgba(100,220,255,.22)',l:'#aaeeff',ci:'#ddf8ff'},
+    air:      {s:'#88ffcc',f:'rgba(120,255,180,.07)',g:'rgba(130,255,190,.18)',l:'#aaffdd',ci:'#ccffee'},
+    earth:    {s:'#cc8833',f:'rgba(180,110,30,.10)', g:'rgba(180,110,30,.22)', l:'#ddaa55',ci:'#ffcc77'},
+    lightning:{s:'#ffee44',f:'rgba(255,230,40,.10)', g:'rgba(255,230,40,.28)', l:'#ffee77',ci:'#ffffaa'},
+    cold:     {s:'#66ccff',f:'rgba(80,180,255,.08)', g:'rgba(80,190,255,.20)', l:'#88ddff',ci:'#ccf0ff'},
+    heat:     {s:'#ff8833',f:'rgba(255,110,30,.10)', g:'rgba(255,100,20,.25)', l:'#ffaa55',ci:'#ffcc88'},
+    tougher:  {s:'#aa8866',f:'rgba(150,110,70,.10)', g:'rgba(150,110,70,.22)', l:'#ccaa88',ci:'#ddcc99'},
+  };
+
+  // ── glyph alphabet ──
+  const GLYPHS={'a':'M1,7 L9,7 M5,0 L5,7','b':'M1,14 L1,0 L9,0 M1,7 L7,7','c':'M5,0 L5,14 M1,5 L5,0 M9,5 L5,0','d':'M1,0 L9,0 M1,14 L9,14 M1,0 L1,14','e':'M1,0 L9,0 L9,14 L1,14 L1,0','f':'M5,14 L5,0 M1,7 L9,7 M1,0 L9,0','g':'M1,0 L1,14 M9,0 L9,14 M1,7 L9,7 M1,0 L9,0','h':'M1,0 L9,14 M9,0 L1,14','i':'M5,0 L5,14 M2,0 L8,0 M2,14 L8,14','j':'M1,7 L9,7 M9,7 L9,14 M1,7 L1,14','k':'M5,0 L1,7 L5,14 L9,7 Z','l':'M9,0 L1,7 L9,14','m':'M1,0 L1,14 M1,0 L9,7 L1,14','n':'M1,14 L5,0 L9,14','o':'M1,0 L9,0 M1,14 L9,14 M1,0 L1,14 M9,0 L9,14','p':'M1,14 L9,0 L1,0','q':'M1,7 L5,0 L9,7 M1,7 L1,14 M9,7 L9,14','r':'M1,0 L1,14 L9,14 M1,7 L9,7','s':'M1,14 L9,0','t':'M1,0 L9,0 M5,0 L5,14','u':'M1,0 L1,14 L9,14 L9,0','v':'M1,0 L1,7 L5,14 L9,7 L9,0','w':'M1,0 L9,0 L9,14','x':'M1,0 L9,0 L9,14 L1,14 M1,7 L9,7','y':'M1,0 L5,7 L9,0 M5,7 L5,14','z':'M1,7 L9,7 M1,7 L1,14 M9,7 L9,14','(':  'M8,0 L4,3 L4,11 L8,14',')':  'M2,0 L6,3 L6,11 L2,14','-':'M1,7 L9,7',"'":'M5,0 L5,4',' ':''};
+
+  const GLYPHS_PARSED=(()=>{
+    const out={};
+    for(const[ch,pathStr]of Object.entries(GLYPHS)){
+      if(!pathStr){out[ch]=[];continue;}
+      const segs=[];
+      pathStr.split('M').filter(Boolean).forEach(seg=>{
+        const pts=[];
+        const raw=('M'+seg).trim().split(/\s+/);
+        let cmd='M';
+        for(const tok of raw){
+          if(tok==='Z'){pts.push({cmd:'Z',x:0,y:0});continue;}
+          const hasCmd=/^[MLZ]/.test(tok);
+          if(hasCmd){cmd=tok[0];const coords=tok.slice(1);if(!coords)continue;const[px,py]=coords.split(',');pts.push({cmd,x:parseFloat(px),y:parseFloat(py)});cmd='L';}
+          else{const[px,py]=tok.split(',');if(px!==undefined&&py!==undefined)pts.push({cmd,x:parseFloat(px),y:parseFloat(py)});cmd='L';}
+        }
+        if(pts.length)segs.push(pts);
+      });
+      out[ch]=segs;
+    }
+    return out;
+  })();
+  const _glyphKeys=Object.keys(GLYPHS).filter(k=>k.match(/[a-z]/));
+
+  function glyphSVG(text,x,y,h,color,opacity=1){
+    const scale=h/14,charW=h*0.82,sw=Math.max(0.9,scale*1.3).toFixed(1),str=text.toLowerCase();
+    const parts=[`<g opacity="${opacity}">`];let cx=x;
+    for(const ch of str){
+      const segs=GLYPHS_PARSED[ch];
+      if(!segs||!segs.length){cx+=charW*0.4;continue;}
+      for(const pts of segs){
+        let d='';
+        for(const p of pts){if(p.cmd==='Z'){d+='Z';continue;}d+=p.cmd+(cx+p.x*scale).toFixed(1)+','+(y+p.y*scale).toFixed(1)+' ';}
+        parts.push(`<path d="${d.trim()}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>`);
+      }
+      cx+=charW;
+    }
+    parts.push('</g>');return parts.join('');
+  }
+  function glyphWidth(text,h){const charW=h*0.82;let w=0;for(const ch of text.toLowerCase()){if(ch===' '||!GLYPHS[ch])w+=charW*0.4;else w+=charW;}return w;}
+
+  // ── helpers ──
+  const _blendCache=new Map();
+  function blendHex(a,b,t){
+    const k=a+b+t;if(_blendCache.has(k))return _blendCache.get(k);
+    const h=s=>{s=s.replace('#','');return[parseInt(s.slice(0,2),16),parseInt(s.slice(2,4),16),parseInt(s.slice(4,6),16)];};
+    const ar=h(a),br=h(b);
+    const v='#'+[0,1,2].map(i=>Math.round(ar[i]*(1-t)+br[i]*t).toString(16).padStart(2,'0')).join('');
+    _blendCache.set(k,v);return v;
+  }
+  function hexPts(cx,cy,r){return Array.from({length:6},(_,i)=>{const a=(i*60-30)*Math.PI/180;return(cx+r*Math.cos(a)).toFixed(2)+','+(cy+r*Math.sin(a)).toFixed(2);}).join(' ');}
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function toRoman(n){return['I','II','III','IV','V','VI'][n-1]||String(n);}
+
+  function runeFromName(name){
+    name=name.trim().toLowerCase();
+    for(const cat of Object.values(RUNES))for(const r of cat)if(r.name.toLowerCase()===name)return{...r};
+    for(const cat of Object.values(RUNES))for(const r of cat)if(r.name.toLowerCase().startsWith(name))return{...r};
+    return{name,sym:'?',ck:'base'};
+  }
+  function runeCategory(rune){
+    for(const[cat,list]of Object.entries(RUNES))if(list.some(r=>r.name===rune.name))return cat;
+    return null;
+  }
+
+  const _palCache=new Map();
+  function giantRune(lay,isBase){
+    if(isBase||lay.type!=='layer'||!lay.runes.length||lay.runes.length<lay.max)return null;
+    const f=lay.runes[0];if(!PAL[f.ck]||f.ck==='base')return null;
+    return lay.runes.every(r=>r.name===f.name)?f:null;
+  }
+  function computePal(srcLayers){
+    let fp='';for(const l of srcLayers){if(l.type==='layer')for(const r of l.runes)fp+=r.ck+';';}
+    if(_palCache.has(fp))return _palCache.get(fp);
+    const base=srcLayers[0]&&srcLayers[0].runes[0];
+    let p={...(base?PAL[base.ck]||PAL.mana:PAL.mana)};
+    let li=0;
+    srcLayers.forEach(lay=>{
+      if(lay.type!=='layer')return;li++;
+      lay.runes.forEach(r=>{if(r.ck==='cold'||r.ck==='heat'||r.ck==='tougher'){const mp=PAL[r.ck];p={...p,s:blendHex(p.s,mp.s,.22),l:blendHex(p.l,mp.l,.22),ci:blendHex(p.ci,mp.ci,.18)};}});
+      const gr=giantRune(lay,li===1);
+      if(gr&&PAL[gr.ck]){const gp=PAL[gr.ck];p={...p,s:blendHex(p.s,gp.s,.45),l:blendHex(p.l,gp.l,.45),ci:blendHex(p.ci,gp.ci,.4),g:blendHex(p.g||gp.g,gp.g,.45)};}
+    });
+    _palCache.set(fp,p);return p;
+  }
+  function scPal(sc,fallbackPal){
+    const base=sc.layers[0]&&sc.layers[0].runes[0];
+    if(!base||base.ck==='base')return fallbackPal||PAL.mana;
+    return computePal(sc.layers);
+  }
+  function runePalFor(rune,ctx){return rune.ck==='base'?ctx:(PAL[rune.ck]||ctx);}
+
+  function scAngle(idx,total,sc){return(idx*360/Math.max(total,1))-90+(sc&&sc.angOff||0);}
+  function scCenter(ang,n,sc,ox,oy,nl){
+    const r=scR(n||1),rad=ang*Math.PI/180,dist=mainR(nl)+r;
+    const bx=ox+dist*Math.cos(rad),by=oy+dist*Math.sin(rad);
+    return{x:bx+(sc&&sc.dx||0),y:by+(sc&&sc.dy||0)};
+  }
+
+  // ── shape drawing ──
+  function _shp(rune,x,y,c,sz){
+    const sym=rune.sym,isElemental=['Fire','Water','Air','Earth','Ice','Lightning'].includes(rune.name);
+    let o='';
+    if(isElemental){
+      if(sym==='△'){o+=`<polygon points="${x.toFixed(2)},${(y-sz).toFixed(2)} ${(x+sz*.87).toFixed(2)},${(y+sz*.5).toFixed(2)} ${(x-sz*.87).toFixed(2)},${(y+sz*.5).toFixed(2)}" fill="${c.f}" stroke="${c.s}" stroke-width="1.8" filter="url(#sceglow)"/>`;if(sz>10){const s2=sz*.6;o+=`<polygon points="${x.toFixed(2)},${(y-s2).toFixed(2)} ${(x+s2*.87).toFixed(2)},${(y+s2*.5).toFixed(2)} ${(x-s2*.87).toFixed(2)},${(y+s2*.5).toFixed(2)}" fill="none" stroke="${c.ci}" stroke-width="1" opacity=".7"/>`;}}
+      else if(sym==='○'){o+=`<circle cx="${x}" cy="${y}" r="${sz}" fill="${c.f}" stroke="${c.s}" stroke-width="1.7" filter="url(#sceglow)"/>`;if(sz>8)o+=`<circle cx="${x}" cy="${y}" r="${sz*.55}" fill="none" stroke="${c.ci}" stroke-width="1" opacity=".7"/>`;o+=`<circle cx="${x}" cy="${y}" r="${sz*.22}" fill="${c.s}" opacity=".85" filter="url(#sceglow)"/>`;}
+      else if(sym==='□'){const h=sz*.92;o+=`<rect x="${(x-h).toFixed(2)}" y="${(y-h).toFixed(2)}" width="${(h*2).toFixed(2)}" height="${(h*2).toFixed(2)}" fill="${c.f}" stroke="${c.s}" stroke-width="1.7" filter="url(#sceglow)"/>`;if(sz>8){const h2=h*.6;o+=`<rect x="${(x-h2).toFixed(2)}" y="${(y-h2).toFixed(2)}" width="${(h2*2).toFixed(2)}" height="${(h2*2).toFixed(2)}" fill="none" stroke="${c.ci}" stroke-width="1" opacity=".7"/>`;}}
+      else if(sym==='⬡'){o+=`<polygon points="${hexPts(x,y,sz)}" fill="${c.f}" stroke="${c.s}" stroke-width="1.7" filter="url(#sceglow)"/>`;if(sz>8)o+=`<polygon points="${hexPts(x,y,sz*.6)}" fill="none" stroke="${c.ci}" stroke-width="1" opacity=".7"/>`;}
+      else if(sym==='⚡'){o+=`<line x1="${(x-sz*.35).toFixed(2)}" y1="${(y-sz).toFixed(2)}" x2="${(x+sz*.35).toFixed(2)}" y2="${y.toFixed(2)}" stroke="${c.s}" stroke-width="2.5" filter="url(#sceglow)"/>`;o+=`<line x1="${(x+sz*.35).toFixed(2)}" y1="${y.toFixed(2)}" x2="${(x-sz*.35).toFixed(2)}" y2="${(y+sz).toFixed(2)}" stroke="${c.s}" stroke-width="2.5" filter="url(#sceglow)"/>`;}
+      else if(sym==='≋'){for(let k=-1;k<=1;k++){const yy=y+k*sz*.38;o+=`<path d="M${(x-sz).toFixed(2)} ${yy.toFixed(2)} Q${(x-sz*.5).toFixed(2)} ${(yy-sz*.3).toFixed(2)} ${x.toFixed(2)} ${yy.toFixed(2)} Q${(x+sz*.5).toFixed(2)} ${(yy+sz*.3).toFixed(2)} ${(x+sz).toFixed(2)} ${yy.toFixed(2)}" fill="none" stroke="${c.s}" stroke-width="1.5" opacity=".9" filter="url(#sceglow)"/>`;}}
+    } else {
+      const gh=sz*.88,gw=glyphWidth(rune.name,gh);
+      o+=glyphSVG(rune.name,x-gw/2,y-gh*.52,gh,c.s,.95);
+    }
+    return o;
+  }
+
+  // ── draw one circle at ox,oy ──
+  function drawCircleAt(circLayers,circN,pal,ox,oy,prefix){
+    const rw=RING_W,cr=CORE_R,GAP=28;
+    let cumGap=0;const gapByLayer=[0];let lCount=0;
+    circLayers.forEach(lay=>{
+      if(lay.type==='layer'){lCount++;gapByLayer[lCount]=cumGap;}
+      else{const cnt=lay.runes.filter(r=>r.name==='1()').length;cumGap+=cnt*GAP;}
+    });
+    const rr=Array.from({length:circN+1},(_,i)=>cr+i*rw+(i<gapByLayer.length?gapByLayer[i]:cumGap));
+    let html=`<defs>`;
+    rr.forEach((r,i)=>html+=`<path id="${prefix}tp${i}" d="M${ox},${oy} m-${r},0 a${r},${r} 0 1,1 ${r*2},0 a${r},${r} 0 1,1 -${r*2},0"/>`);
+    html+=`</defs>`;
+    for(let i=rr.length-1;i>=1;i--)html+=`<circle cx="${ox}" cy="${oy}" r="${rr[i]}" fill="${pal.f}" stroke="none"/>`;
+    let lNum=0;
+    circLayers.forEach(lay=>{
+      if(lay.type!=='layer')return;
+      lNum++;
+      const ri=lNum-1,r=rr[ri],ouR=rr[ri+1];
+      const spdS=([22,33,49,72,94,123][ri]||145+ri*22);
+      const layDir=ri%2===0?-1:1;
+      html+=`<g style="transform-origin:${ox}px ${oy}px;animation:${layDir>0?'scecw':'sceccw'} ${spdS}s linear infinite">`;
+      if(ri>0)html+=`<circle cx="${ox}" cy="${oy}" r="${r}" fill="none" stroke="${pal.s}" stroke-width="1.8" opacity=".7" filter="url(#sceglow)"/>`;
+      const gr=giantRune(lay,false);
+      if(gr){const cp=PAL[gr.ck]||pal;const bs=r*1.25;html+=_shp(gr,ox,oy,cp,bs);}
+      else {
+        const rR=(r+ouR)/2,arcLen=2*Math.PI*rR,gh=21.6,scale=gh/14,charW=gh*.82;
+        const arcId=`${prefix}arc${ri}`;
+        html+=`<defs><path id="${arcId}" d="M${ox},${oy} m-${rR},0 a${rR},${rR} 0 1,1 ${rR*2},0 a${rR},${rR} 0 1,1 -${rR*2},0"/></defs>`;
+        const _arcSW=Math.max(1.2,scale*1.3).toFixed(1);
+        const _TAU=Math.PI*2,_HALF_PI=Math.PI*0.5;
+        function gibberish(seed,count){let h=0;for(const c of seed)h=(h*31+c.charCodeAt(0))>>>0;let res='';for(let i=0;i<count;i++){h=(h*1664525+1013904223)>>>0;res+=_glyphKeys[h%_glyphKeys.length];}return res;}
+        lay.runes.forEach((rune,idx)=>{
+          const cp=runePalFor(rune,pal);
+          const isElemental=['Fire','Water','Air','Earth','Ice','Lightning'].includes(rune.name);
+          const segStart=(idx/lay.max)*arcLen,segEnd=((idx+1)/lay.max)*arcLen;
+          const segPad=charW*.15,drawStart=segStart+segPad,drawEnd=segEnd-segPad,drawLen=drawEnd-drawStart;
+          const clipId=`${prefix}clip${ri}_${idx}`;
+          const angA=(segStart/arcLen)*_TAU-_HALF_PI,angB=(segEnd/arcLen)*_TAU-_HALF_PI;
+          const r1=rR-(ouR-r)*.52,r2=rR+(ouR-r)*.52;
+          const x1=ox+r1*Math.cos(angA),y1=oy+r1*Math.sin(angA);
+          const x2=ox+r2*Math.cos(angA),y2=oy+r2*Math.sin(angA);
+          const x3=ox+r2*Math.cos(angB),y3=oy+r2*Math.sin(angB);
+          const x4=ox+r1*Math.cos(angB),y4=oy+r1*Math.sin(angB);
+          const large=((segEnd-segStart)/arcLen)>.5?1:0;
+          html+=`<defs><clipPath id="${clipId}"><path d="M${x2.toFixed(2)},${y2.toFixed(2)} A${r2.toFixed(2)},${r2.toFixed(2)} 0 ${large},1 ${x3.toFixed(2)},${y3.toFixed(2)} L${x4.toFixed(2)},${y4.toFixed(2)} A${r1.toFixed(2)},${r1.toFixed(2)} 0 ${large},0 ${x1.toFixed(2)},${y1.toFixed(2)} Z"/></clipPath></defs>`;
+          if(isElemental){
+            const centerOff=segStart+(segEnd-segStart)/2,ang=(centerOff/arcLen)*360-90,rad2=ang*Math.PI/180;
+            const rx=ox+rR*Math.cos(rad2),ry=oy+rR*Math.sin(rad2);
+            html+=`<g clip-path="url(#${clipId})"><g transform="rotate(${(ang+90).toFixed(1)},${rx.toFixed(2)},${ry.toFixed(2)})">${_shp(rune,rx,ry,cp,12)}</g></g>`;
+          } else {
+            const runeStr=rune.name.toLowerCase().replace(/[^a-z]/g,'');
+            const totalChars=Math.max(0,Math.floor(drawLen/charW)-runeStr.length);
+            const gibBefore=Math.floor(totalChars/2),gib=gibberish(rune.name+idx+ri,totalChars+4);
+            html+=`<g clip-path="url(#${clipId})">`;
+            // arc glyphs
+            let offset=drawStart;
+            const renderArc=(str,startOff)=>{
+              let co=startOff;
+              for(const ch of str){
+                const segs=GLYPHS_PARSED[ch];
+                if(!segs||!segs.length){co+=charW*.4;continue;}
+                for(const pts of segs){
+                  let d='';
+                  for(const p of pts){
+                    if(p.cmd==='Z'){d+='Z';continue;}
+                    const arcOff=co+p.x*scale,radOff=(p.y-7)*scale;
+                    const angle=arcOff/arcLen*_TAU-_HALF_PI,rad2=rR+radOff;
+                    d+=p.cmd+(ox+rad2*Math.cos(angle)).toFixed(1)+','+(oy+rad2*Math.sin(angle)).toFixed(1)+' ';
+                  }
+                  html+=`<path d="${d.trim()}" fill="none" stroke="${cp.s}" stroke-width="${_arcSW}" stroke-linecap="round" stroke-linejoin="round" filter="url(#sceglow)" opacity=".95"/>`;
+                }
+                co+=charW;
+              }
+              return co;
+            };
+            offset=renderArc(gib.slice(0,gibBefore),offset);
+            offset=renderArc(runeStr,offset);
+            renderArc(gib.slice(gibBefore),offset);
+            html+=`</g>`;
+          }
+        });
+      }
+      html+=`</g>`;
+    });
+    html+=`<circle cx="${ox}" cy="${oy}" r="${rr[circN]}" fill="none" stroke="${pal.s}" stroke-width="1.4" opacity=".35" filter="url(#sceglow)"/>`;
+    // gates
+    lNum=0;
+    circLayers.forEach((lay)=>{
+      if(lay.type==='layer'){lNum++;return;}
+      if(!lay.runes.length)return;
+      const gR=rr[lNum];
+      const oneCount=lay.runes.filter(r=>r.name==='1()').length;
+      if(oneCount>0)html+=`<circle cx="${ox}" cy="${oy}" r="${gR}" fill="none" stroke="${pal.s}" stroke-width="${1.4*(1+oneCount*3)}" opacity=".8" filter="url(#sceglow)"/>`;
+      const nonOne=lay.runes.filter(r=>r.name!=='1()');
+      nonOne.forEach((rune,idx)=>{
+        const cp=runePalFor(rune,pal),tot=nonOne.length;
+        const ang=180+idx*(160/Math.max(tot-1,1))+(tot===1?80:0),rad=ang*Math.PI/180;
+        const gx=ox+gR*Math.cos(rad),gy=oy+gR*Math.sin(rad);
+        html+=`<circle cx="${gx}" cy="${gy}" r="14" fill="#09070f" stroke="${cp.s}" stroke-width="1.4" opacity=".85" filter="url(#sceglow)"/>`;
+        html+=_shp(rune,gx,gy,cp,6);
+        html+=`<text x="${gx-11}" y="${gy+4}" font-size="11" fill="${cp.s}" opacity=".75" font-family="Crimson Text,serif">(</text>`;
+        html+=`<text x="${gx+7}" y="${gy+4}" font-size="11" fill="${cp.s}" opacity=".75" font-family="Crimson Text,serif">)</text>`;
+      });
+    });
+    // core
+    const outerR=rr[circN];
+    html+=`<g style="animation:scepulse 2s ease-in-out infinite;transform-origin:${ox}px ${oy}px">
+      <circle cx="${ox}" cy="${oy}" r="${outerR*.175}" fill="${pal.g||pal.f}" opacity=".16" filter="url(#scecoreglow)"/>
+      <circle cx="${ox}" cy="${oy}" r="${outerR*.107}" fill="${pal.g||pal.f}" opacity=".34" filter="url(#sceglow2)"/>
+      <circle cx="${ox}" cy="${oy}" r="${outerR*.054}" fill="${pal.ci}" opacity=".45" filter="url(#sceglow)"/>
+      <circle cx="${ox}" cy="${oy}" r="${outerR*.022}" fill="${pal.ci}" opacity=".7"/>
+    </g>`;
+    return html;
+  }
+
+  // ── draw SC circle ──
+  function drawSCAt(scLayers,scN,pal,ox,oy,prefix){
+    const rw=SC_RING_W,cr=SC_CORE_R,GAP=18;
+    let cumGap=0;const gapByLayer=[0];let lCount=0;
+    scLayers.forEach(lay=>{
+      if(lay.type==='layer'){lCount++;gapByLayer[lCount]=cumGap;}
+      else{const cnt=lay.runes.filter(r=>r.name==='1()').length;cumGap+=cnt*GAP;}
+    });
+    const rr=Array.from({length:scN+1},(_,i)=>cr+i*rw+(i<gapByLayer.length?gapByLayer[i]:cumGap));
+    let html='';
+    for(let i=rr.length-1;i>=1;i--)html+=`<circle cx="${ox}" cy="${oy}" r="${rr[i]}" fill="${pal.f}" stroke="none"/>`;
+    let lNum=0;
+    scLayers.forEach(lay=>{
+      if(lay.type!=='layer')return;lNum++;
+      const ri=lNum-1,r=rr[ri],ouR=rr[ri+1];
+      const spdS=([22,33,49,72][ri]||94+ri*22);const layDir=ri%2===0?-1:1;
+      html+=`<g style="transform-origin:${ox}px ${oy}px;animation:${layDir>0?'scecw':'sceccw'} ${spdS}s linear infinite">`;
+      if(ri>0)html+=`<circle cx="${ox}" cy="${oy}" r="${r}" fill="none" stroke="${pal.s}" stroke-width="1.5" opacity=".7" filter="url(#sceglow)"/>`;
+      const rR=(r+ouR)/2,arcLen=2*Math.PI*rR,gh=16,scale=gh/14,charW=gh*.82;
+      const _arcSW=Math.max(1,scale*1.3).toFixed(1),_TAU=Math.PI*2,_HALF_PI=Math.PI*.5;
+      lay.runes.forEach((rune,idx)=>{
+        const cp=runePalFor(rune,pal);
+        const isEl=['Fire','Water','Air','Earth','Ice','Lightning'].includes(rune.name);
+        const segStart=(idx/lay.max)*arcLen,segEnd=((idx+1)/lay.max)*arcLen;
+        const clipId=`${prefix}sclip${ri}_${idx}`;
+        const angA=(segStart/arcLen)*_TAU-_HALF_PI,angB=(segEnd/arcLen)*_TAU-_HALF_PI;
+        const r1=rR-(ouR-r)*.52,r2=rR+(ouR-r)*.52;
+        const x1=ox+r1*Math.cos(angA),y1=oy+r1*Math.sin(angA),x2=ox+r2*Math.cos(angA),y2=oy+r2*Math.sin(angA);
+        const x3=ox+r2*Math.cos(angB),y3=oy+r2*Math.sin(angB),x4=ox+r1*Math.cos(angB),y4=oy+r1*Math.sin(angB);
+        const large=((segEnd-segStart)/arcLen)>.5?1:0;
+        html+=`<defs><clipPath id="${clipId}"><path d="M${x2.toFixed(2)},${y2.toFixed(2)} A${r2.toFixed(2)},${r2.toFixed(2)} 0 ${large},1 ${x3.toFixed(2)},${y3.toFixed(2)} L${x4.toFixed(2)},${y4.toFixed(2)} A${r1.toFixed(2)},${r1.toFixed(2)} 0 ${large},0 ${x1.toFixed(2)},${y1.toFixed(2)} Z"/></clipPath></defs>`;
+        if(isEl){
+          const centerOff=segStart+(segEnd-segStart)/2,ang=(centerOff/arcLen)*360-90,rad2=ang*Math.PI/180;
+          const rx=ox+rR*Math.cos(rad2),ry=oy+rR*Math.sin(rad2);
+          html+=`<g clip-path="url(#${clipId})"><g transform="rotate(${(ang+90).toFixed(1)},${rx.toFixed(2)},${ry.toFixed(2)})">${_shp(rune,rx,ry,cp,10)}</g></g>`;
+        } else {
+          const runeStr=rune.name.toLowerCase().replace(/[^a-z]/g,'');
+          html+=`<g clip-path="url(#${clipId})">`;
+          let co=segStart+charW*.15;
+          for(const ch of runeStr){
+            const segs=GLYPHS_PARSED[ch];if(!segs||!segs.length){co+=charW*.4;continue;}
+            for(const pts of segs){
+              let d='';
+              for(const p of pts){if(p.cmd==='Z'){d+='Z';continue;}const ao=co+p.x*scale,ro=(p.y-7)*scale,an=ao/arcLen*_TAU-_HALF_PI,r2b=rR+ro;d+=p.cmd+(ox+r2b*Math.cos(an)).toFixed(1)+','+(oy+r2b*Math.sin(an)).toFixed(1)+' ';}
+              html+=`<path d="${d.trim()}" fill="none" stroke="${cp.s}" stroke-width="${_arcSW}" stroke-linecap="round" stroke-linejoin="round" filter="url(#sceglow)" opacity=".95"/>`;
+            }
+            co+=charW;
+          }
+          html+=`</g>`;
+        }
+      });
+      html+=`</g>`;
+    });
+    html+=`<circle cx="${ox}" cy="${oy}" r="${rr[scN]}" fill="none" stroke="${pal.s}" stroke-width="1.2" opacity=".35" filter="url(#sceglow)"/>`;
+    const outerR=rr[scN];
+    html+=`<circle cx="${ox}" cy="${oy}" r="${outerR*.2}" fill="${pal.g||pal.f}" opacity=".3" filter="url(#scecoreglow)"/>`;
+    html+=`<circle cx="${ox}" cy="${oy}" r="${outerR*.1}" fill="${pal.ci}" opacity=".5" filter="url(#sceglow)"/>`;
+    return html;
+  }
+
+  // ── parse formula ──
+  function parseFormula(raw){
+    const m=raw.match(/\{([^}]*)\}/);
+    if(!m)return null;
+    const inner=m[1];
+    const tokens=inner.split(',').map(s=>s.trim()).filter(Boolean);
+    if(!tokens.length)return null;
+    const newLayers=[];let layerNum=0;
+    tokens.forEach(tok=>{
+      const isGate=tok.startsWith('(')&&tok.endsWith(')');
+      if(isGate){const content=tok.slice(1,-1).trim();const runes=content==='—'||content===''?[]:content.split(/\s+/).filter(Boolean).map(runeFromName);newLayers.push({type:'gate',runes,max:4});}
+      else{layerNum++;const content=tok.trim();const runes=content==='—'||content===''?[]:content.split(/\s+/).filter(Boolean).map(runeFromName);newLayers.push({type:'layer',runes:runes.slice(0,layerNum),max:layerNum});}
+    });
+    if(newLayers.length&&newLayers[0].type==='gate'){newLayers.unshift({type:'layer',runes:[],max:1});layerNum++;}
+    const actualLayers=newLayers.filter(l=>l.type==='layer').length;
+    if(actualLayers<1)return null;
+    // parse semi-circles
+    const scMatches=[...raw.matchAll(/\[\s*([^:]+):\s*([^\]]+)\]/g)];
+    const semiCircles=scMatches.map(match=>{
+      const scName=match[1].trim(),scInner=match[2];
+      const scTokens=scInner.split(',').map(s=>s.trim()).filter(Boolean);
+      const scLayers=[];let scLayerNum=0;
+      scTokens.forEach(tok=>{
+        const isGate=tok.startsWith('(')&&tok.endsWith(')');
+        if(isGate){const content=tok.slice(1,-1).trim();const runes=content==='—'||content===''?[]:content.split(/\s+/).filter(Boolean).map(runeFromName);scLayers.push({type:'gate',runes,max:4});}
+        else{scLayerNum++;const content=tok.trim();const runes=content==='—'||content===''?[]:content.split(/\s+/).filter(Boolean).map(runeFromName);scLayers.push({type:'layer',runes:runes.slice(0,scLayerNum),max:scLayerNum});}
+      });
+      return{name:scName,layers:scLayers,dx:0,dy:0};
+    });
+    return{layers:newLayers,numLayers:actualLayers,semiCircles};
+  }
+
+  // ── compute viewBox to fit everything ──
+  function computeViewBox(layers,numLayers,semiCircles){
+    const outerR=mainR(numLayers);
+    let minX=CX-outerR,minY=CY-outerR,maxX=CX+outerR,maxY=CY+outerR;
+    const tot=semiCircles.length;
+    semiCircles.forEach((sc,idx)=>{
+      const n=sc.layers.filter(l=>l.type==='layer').length||1;
+      const r=scR(n),ang=scAngle(idx,tot,sc);
+      const{x,y}=scCenter(ang,n,sc,CX,CY,numLayers);
+      minX=Math.min(minX,x-r-8);minY=Math.min(minY,y-r-8);
+      maxX=Math.max(maxX,x+r+8);maxY=Math.max(maxY,y+r+8);
+    });
+    const pad=20;
+    return{x:minX-pad,y:minY-pad,w:maxX-minX+pad*2,h:maxY-minY+pad*2};
+  }
+
+  // ── render SVG string ──
+  function renderSVG(formula){
+    const parsed=parseFormula(formula);
+    if(!parsed)return null;
+    const{layers,numLayers,semiCircles}=parsed;
+    const pal=computePal(layers);
+    const vb=computeViewBox(layers,numLayers,semiCircles);
+    const pfx='sce_';
+
+    let html=`<svg viewBox="${vb.x.toFixed(1)} ${vb.y.toFixed(1)} ${vb.w.toFixed(1)} ${vb.h.toFixed(1)}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;background:#05030a;display:block">
+      <style>
+        @keyframes scecw  {to{transform:rotate( 360deg)}}
+        @keyframes sceccw {to{transform:rotate(-360deg)}}
+        @keyframes scepulse{0%,100%{opacity:.8}50%{opacity:1}}
+      </style>
+      <defs>
+        <filter id="sceglow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="sceglow2"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="scecoreglow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <rect x="${vb.x.toFixed(1)}" y="${vb.y.toFixed(1)}" width="${vb.w.toFixed(1)}" height="${vb.h.toFixed(1)}" fill="#05030a"/>`;
+
+    // main circle
+    html+=drawCircleAt(layers,numLayers,pal,CX,CY,pfx);
+
+    // semi-circles
+    const tot=semiCircles.length;
+    semiCircles.forEach((sc,idx)=>{
+      const n=sc.layers.filter(l=>l.type==='layer').length||1;
+      const ang=scAngle(idx,tot,sc);
+      const{x,y}=scCenter(ang,n,sc,CX,CY,numLayers);
+      const scPalV=scPal(sc,pal);
+      const rad=ang*Math.PI/180;
+      const ex=CX+mainR(numLayers)*Math.cos(rad),ey=CY+mainR(numLayers)*Math.sin(rad);
+      html+=`<line x1="${ex.toFixed(1)}" y1="${ey.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${scPalV.s}" stroke-width="1" stroke-dasharray="3 3" opacity=".3"/>`;
+      html+=`<g opacity="0.85">${drawSCAt(sc.layers,n,scPalV,x,y,pfx+'sc'+idx+'_')}</g>`;
+      html+=`<text x="${x}" y="${y-scR(n)-6}" text-anchor="middle" font-family="Cinzel,serif" font-size="7" fill="${scPalV.l}" letter-spacing="2.5" opacity=".5">${esc(sc.name.toUpperCase())}</text>`;
+    });
+
+    html+=`</svg>`;
+    return{svg:html,pal};
+  }
+
+  // ── compute stats from parsed formula ──
+  function computeStats(formula){
+    const parsed=parseFormula(formula);
+    if(!parsed)return{};
+    const{layers,numLayers,semiCircles}=parsed;
+
+    const allLayerSetsTagged=[{layerSet:layers,isSC:false},...semiCircles.map(sc=>({layerSet:sc.layers,isSC:true}))];
+    const RC={};
+    function _rc(n,v){RC[n]=(RC[n]||0)+v;}
+    let totalMana=0,totalThaumir=0,personalMana=0;
+    const lsData=[];
+
+    // mana
+    for(let i=0;i<numLayers;i++){const cost=i<MANA_COSTS.length?MANA_COSTS[i]:MANA_COSTS[MANA_COSTS.length-1]*Math.pow(2,i-MANA_COSTS.length+1);totalMana+=cost;}
+    semiCircles.forEach(sc=>{const scN=sc.layers.filter(l=>l.type==='layer').length;for(let i=0;i<scN;i++){const cost=i<SC_MANA_COSTS.length?SC_MANA_COSTS[i]:SC_MANA_COSTS[SC_MANA_COSTS.length-1]*Math.pow(2,i-SC_MANA_COSTS.length+1);totalMana+=cost;}});
+
+    const allElementalInSpell=new Set();
+    allLayerSetsTagged.forEach(({layerSet,isSC})=>{
+      const scMult=isSC?.5:1,layerOnly=layerSet.filter(l=>l.type==='layer');
+      const lsBaseRune=layerOnly[0]?.runes[0],lsBaseName=lsBaseRune&&runeCategory(lsBaseRune)==='Elemental'?lsBaseRune.name:null;
+      lsData.push({scMult,layerOnly,lsBaseName,isSC});
+      layerSet.forEach(lay=>lay.runes.forEach(rune=>{
+        const cat=runeCategory(rune);totalThaumir+=cat?THAUMIR_COSTS[cat]||0:0;
+        if(lay.type!=='layer')return;
+        _rc(rune.name,scMult);
+        if(runeCategory(rune)==='Elemental')allElementalInSpell.add(rune.name);
+      }));
+    });
+    totalMana+=personalMana;
+
+    function rc(n){return RC[n]||0;}
+    function rci(n){return Math.round(rc(n));}
+
+    // success
+    const INCOMPATIBLE=[new Set(['Fire','Water']),new Set(['Fire','Ice']),new Set(['Earth','Lightning']),new Set(['Earth','Ice']),new Set(['Ice','Lightning'])];
+    let success=75;
+    if(rci('Connect')>0&&rci('Connect')%2!==0)success-=25;
+    INCOMPATIBLE.forEach(pair=>{const arr=[...pair];if(allElementalInSpell.has(arr[0])&&allElementalInSpell.has(arr[1]))success-=15;});
+    const baseRune=layers.find(l=>l.type==='layer')?.runes[0];
+    const baseRuneName=baseRune&&runeCategory(baseRune)==='Elemental'?baseRune.name:null;
+    lsData.forEach(({layerOnly})=>layerOnly.forEach(lay=>{
+      const compressionCount=lay.runes.filter(r=>r.name==='Compression').length;
+      if(compressionCount>0&&compressionCount%2!==0)success-=10*compressionCount;
+      if(baseRuneName&&lay.runes.length===lay.max&&lay.runes.every(r=>r.name===baseRuneName))success+=5;
+    }));
+    success=Math.max(0,Math.min(100,success));
+
+    // damage
+    const EXPLOSION_DMG_BY_BASE={'Fire':10,'Water':8,'Air':4,'Ice':8,'Earth':6,'Lightning':5};
+    const expDmgBase=baseRuneName?(EXPLOSION_DMG_BY_BASE[baseRuneName]??7):7;
+    const expFlatBonus=(rci('Fire')*1)+(rci('Compression')*(baseRuneName==='Fire'?2:1));
+    const expDmgEffective=expDmgBase+expFlatBonus;
+    let totalDmg=0;
+    lsData.forEach(({scMult,layerOnly})=>{
+      let compressionBeforeExplosion=0,explosionSeen=false;
+      layerOnly.forEach(lay=>{
+        if(!explosionSeen&&!lay.runes.some(r=>r.name==='Explosion'))for(const r of lay.runes)if(r.name==='Compression')compressionBeforeExplosion++;
+        if(lay.runes.some(r=>r.name==='Explosion'))explosionSeen=true;
+        lay.runes.forEach(r=>{
+          if(ELEMENTAL_DMG[r.name]!==undefined)totalDmg+=ELEMENTAL_DMG[r.name]*scMult;
+          else if(r.name==='Explosion')totalDmg+=expDmgEffective*scMult;
+        });
+        if(lay.runes.length===lay.max&&lay.max>0&&lay.runes.every(r=>r.name==='Explosion'))totalDmg+=8*scMult;
+      });
+      if(explosionSeen)totalDmg+=compressionBeforeExplosion*5*scMult;
+    });
+    totalDmg=Math.round(totalDmg*100)/100;
+
+    // speed
+    let totalSpeed=0;
+    const isDoubleSpeedElem=baseRuneName&&new Set(['Water','Ice','Earth']).has(baseRuneName);
+    const pushSpeed=isDoubleSpeedElem?15:10,speedupBonus=isDoubleSpeedElem?23:15;
+    lsData.forEach(({scMult,layerOnly})=>{
+      let pushSeen=false,compSeen=false;
+      layerOnly.forEach(lay=>{
+        let hasPush=false,hasComp=false,hasSpeedup=false,pushCnt=0,compCnt=0,speedupCnt=0;
+        lay.runes.forEach(r=>{if(r.name==='Push'){hasPush=true;pushCnt++;}else if(r.name==='Compression'){hasComp=true;compCnt++;}else if(r.name==='Speedup'){hasSpeedup=true;speedupCnt++;}});
+        if(hasPush)totalSpeed+=pushSpeed*scMult*pushCnt;
+        if(baseRuneName==='Water'&&hasComp)totalSpeed+=compCnt*10*scMult;
+        if(hasSpeedup&&(pushSeen||hasPush||(baseRuneName==='Water'&&(compSeen||hasComp))))totalSpeed+=speedupCnt*speedupBonus*scMult;
+        if(hasPush)pushSeen=true;if(hasComp)compSeen=true;
+      });
+    });
+    const reduceCount=rci('Reduce');
+    if(reduceCount>0){const m=Math.pow(.8,reduceCount);totalMana=Math.round(totalMana*m);totalDmg=Math.round(totalDmg*m*100)/100;}
+    totalSpeed=Math.round(totalSpeed*100)/100;
+
+    // area
+    let areaCm=0;let hasExp=false,hasArea=false;
+    lsData.forEach(({scMult,layerOnly})=>{
+      let layHasExp=false,compExpandBefore=0;
+      layerOnly.forEach(lay=>{
+        if(!layHasExp&&!lay.runes.some(r=>r.name==='Explosion'))for(const r of lay.runes)if(r.name==='Compression'||r.name==='Expand')compExpandBefore++;
+        if(lay.runes.some(r=>r.name==='Explosion')){layHasExp=true;hasExp=true;}
+        if(lay.runes.some(r=>r.name==='Area')){hasArea=true;areaCm=Math.max(areaCm,300*scMult);}
+      });
+      if(layHasExp){areaCm+=100*scMult+compExpandBefore*15*scMult;}
+    });
+
+    // size
+    const SPELL_BASE_SIZE={'Water':5,'Fire':10,'Ice':30,'Earth':30};
+    const COMPRESS_SHRINK={'Water':.30,'Air':.38,'Fire':.38,'Earth':.25,'Ice':.25,'Lightning':.10};
+    const EXPAND_GROW={'Water':.30,'Fire':.30,'Earth':.30,'Ice':.30,'Air':.40,'Lightning':.20};
+    let sizeCm=null;
+    if(baseRuneName&&SPELL_BASE_SIZE[baseRuneName]!==undefined){
+      let s=SPELL_BASE_SIZE[baseRuneName];
+      const sr=COMPRESS_SHRINK[baseRuneName]||.25,gr=EXPAND_GROW[baseRuneName]||.30;
+      for(let i=0;i<rci('Compression');i++)s*=(1-sr);
+      for(let i=0;i<rci('Expand');i++)s*=(1+gr);
+      sizeCm=Math.round(s*100)/100;
+    }
+
+    // weight
+    const SPELL_BASE_WEIGHT={'Water':270,'Earth':1000,'Ice':270};
+    let weightG=null;
+    if(baseRuneName&&SPELL_BASE_WEIGHT[baseRuneName]!==undefined){
+      let w=SPELL_BASE_WEIGHT[baseRuneName];
+      const gr2=EXPAND_GROW[baseRuneName]||.30;
+      for(let i=0;i<rci('Expand');i++)w*=(1+gr2);
+      if(reduceCount>0)w*=Math.pow(.8,reduceCount);
+      weightG=Math.round(w*10)/10;
+    }
+
+    // crit
+    let crit=0;
+    const mainLayerOnly=layers.filter(l=>l.type==='layer');
+    const hasDir=mainLayerOnly.some(l=>l.runes.some(r=>r.name==='Direction'));
+    const hasDirMov=mainLayerOnly.some(l=>l.runes.some(r=>r.name==='Directional Movement'));
+    const hasSee=mainLayerOnly.some(l=>l.runes.some(r=>r.name==='See'));
+    const hasDistinguish=mainLayerOnly.some(l=>l.runes.some(r=>r.name==='Distinguish'));
+    if(hasDirMov)crit+=2;else if(hasDir)crit+=1;
+    if(hasSee&&hasDistinguish)crit+=1;
+
+    // HP
+    const SPELL_BASE_HP={'Earth':15,'Ice':12};
+    let totalHP=0,anyHP=false;
+    lsData.forEach(({scMult,layerOnly,lsBaseName})=>{
+      if(!lsBaseName||!SPELL_BASE_HP[lsBaseName])return;
+      anyHP=true;
+      layerOnly.forEach(lay=>lay.runes.forEach(r=>{if(SPELL_BASE_HP[r.name])totalHP+=SPELL_BASE_HP[r.name]*scMult;if(r.name==='Tougher')totalHP+=(lsBaseName==='Earth'?15:7)*scMult;}));
+    });
+    if(anyHP&&totalHP===0&&baseRuneName)totalHP=SPELL_BASE_HP[baseRuneName]||0;
+
+    // healing
+    let healing=null;
+
+    const fmt=(v,unit)=>v>0?v+unit:'—';
+    return{
+      'Mana':     totalMana+' UM',
+      'Thaumir':  totalThaumir>0?totalThaumir+' τ':'—',
+      'Success':  success+'%',
+      'Damage':   totalDmg>0?totalDmg+' dmg':'—',
+      'Speed':    totalSpeed>0?totalSpeed+' u/s':'—',
+      'Area':     (hasExp||hasArea)?(areaCm>=100?(areaCm/100).toFixed(2)+'m':areaCm.toFixed(1)+'cm'):'—',
+      'Size':     sizeCm!==null?(sizeCm>=100?(sizeCm/100).toFixed(2)+'m':sizeCm+'cm'):'—',
+      'Weight':   weightG!==null?(weightG>=1000?(weightG/1000).toFixed(2)+'kg':weightG+'g'):'—',
+      'Health':   anyHP&&totalHP>0?Math.round(totalHP)+' hp':'—',
+      'Crit Roll':crit>0?'+'+crit:'0',
+      'Dmg Sources': (() => { let d=1; for(let i=0;i<rci('Split');i++)d*=2; for(let i=0;i<rci('Merge');i++)d=Math.max(1,Math.floor(d/2)); return String(d); })(),
+    };
+  }
+
+  // ── get palette colour for a formula (for book spine) ──
+  function getPaletteColor(formula){
+    const parsed=parseFormula(formula);
+    if(!parsed)return null;
+    const pal=computePal(parsed.layers);
+    return pal.s;
+  }
+
+  return{renderSVG,computeStats,getPaletteColor,parseFormula};
+})();
+
+// ═══════════════════════════════════════════════════════
 //  CONSTANTS
 // ═══════════════════════════════════════════════════════
 const RANKS = ['Apprentice Mage','Official Mage','Great Mage','Grand Mage','Archmage'];
@@ -2436,15 +3012,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadAll();
   updateDiscComposer();
 
-  // then keep listening for changes (login/logout)
+  // listen for future auth changes — skip INITIAL_SESSION since we handled it above
   sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'INITIAL_SESSION') return; // already handled above
     if (event === 'SIGNED_IN' && session?.user) {
       await loadCurrentUser(session.user.id);
+      _loadAllRunning = false; // reset mutex on new sign-in
       await loadAll();
       updateDiscComposer();
     } else if (event === 'SIGNED_OUT') {
       currentUser = null;
       renderLoggedOut();
+      _loadAllRunning = false;
       await loadAll();
       updateDiscComposer();
     }
@@ -2458,21 +3037,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   setInterval(decayPoints, 3600000);
 });
 
+let _loadAllRunning = false;
 async function loadAll() {
+  if (_loadAllRunning) return;
+  _loadAllRunning = true;
   showLoading(true);
-  await Promise.all([
-    loadPapers(),
-    loadLibrary(),
-    loadMages(),
-    loadEssentials(),
-    loadMyRecommendations(),
-  ]);
-  renderPapers();
-  renderLibrary();
-  renderMages();
-  renderEssentials();
-  renderAdminPanel();
-  showLoading(false);
+  try {
+    await Promise.allSettled([
+      loadPapers(),
+      loadLibrary(),
+      loadMages(),
+      loadEssentials(),
+      loadMyRecommendations(),
+    ]);
+    renderPapers();
+    renderLibrary();
+    renderMages();
+    renderEssentials();
+    renderAdminPanel();
+  } finally {
+    _loadAllRunning = false;
+    showLoading(false);
+  }
 }
 
 function showLoading(on) {
@@ -2757,14 +3343,15 @@ function getBookColors(spell, idx) {
 }
 
 function buildSpineHTML(s, globalIdx, floorId) {
-  // Use circle_color if present, otherwise fall back to palette
+  // Auto-detect color from formula if available, else use stored circle_color, else palette
   let c1, c2;
-  if (s.circle_color) {
-    // darken the accent color slightly for gradient
-    c1 = s.circle_color;
-    c2 = shadeColor(s.circle_color, -40);
-  } else {
-    [c1, c2] = getBookColors(s, globalIdx);
+  if (s.circle_code && s.circle_code.trim()) {
+    const autoColor = SCE.getPaletteColor(s.circle_code.trim());
+    if (autoColor) { c1 = autoColor; c2 = shadeColor(autoColor, -40); }
+  }
+  if (!c1) {
+    if (s.circle_color) { c1 = s.circle_color; c2 = shadeColor(s.circle_color, -40); }
+    else { [c1, c2] = getBookColors(s, globalIdx); }
   }
   const w = SPELL_BOOK_W[globalIdx % SPELL_BOOK_W.length];
   const h = SPELL_BOOK_H[globalIdx % SPELL_BOOK_H.length];
@@ -2862,43 +3449,31 @@ async function submitSpell() {
   const name        = document.getElementById('spell-name-input').value.trim();
   const formula     = document.getElementById('spell-code-input').value.trim();
   const explanation = document.getElementById('spell-explanation-input').value.trim();
-  const color       = document.getElementById('spell-color-input').value || '#7a9dbb';
   if (!name) { showToast('Please enter a spell name'); return; }
 
-  const stats = {
-    'Mana':    document.getElementById('stat-mana').value    || '—',
-    'Thaumir': document.getElementById('stat-thaumir').value || '—',
-    'Success': document.getElementById('stat-success').value || '—',
-    'Damage':  document.getElementById('stat-dmg').value     || '—',
-    'Speed':   document.getElementById('stat-speed').value   || '—',
-    'Area':    document.getElementById('stat-area').value    || '—',
-    'Size':    document.getElementById('stat-size').value    || '—',
-    'Health':  document.getElementById('stat-health').value  || '—',
-    'Weight':  document.getElementById('stat-weight').value  || '—',
-    'Healing': document.getElementById('stat-heal').value    || '—',
-  };
+  // auto-compute color from formula
+  let circleColor = '#7a9dbb';
+  if (formula) {
+    const autoColor = SCE.getPaletteColor(formula);
+    if (autoColor) circleColor = autoColor;
+  }
 
   const { error } = await sb.from('spells').insert({
     name,
-    circle_code: formula,
-    circle_color: color,
-    explanation: explanation || 'No explanation provided.',
-    floor:       addingToFloor,
-    stats,
-    author_id:   currentUser.id,
-    author_name: currentUser.rank + ' ' + currentUser.name,
+    circle_code:  formula,
+    circle_color: circleColor,
+    explanation:  explanation || 'No explanation provided.',
+    floor:        addingToFloor,
+    stats:        {},
+    author_id:    currentUser.id,
+    author_name:  currentUser.rank + ' ' + currentUser.name,
   });
   if (error) { showToast('Error: ' + error.message); return; }
 
   closeModal('add-spell-modal');
-  // clear fields
-  ['spell-name-input','spell-code-input','spell-explanation-input',
-   'stat-mana','stat-thaumir','stat-success','stat-dmg','stat-speed',
-   'stat-area','stat-size','stat-health','stat-weight','stat-heal'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  document.getElementById('spell-color-input').value = '#7a9dbb';
+  document.getElementById('spell-name-input').value        = '';
+  document.getElementById('spell-code-input').value        = '';
+  document.getElementById('spell-explanation-input').value = '';
   showToast('Spell added to the Library');
   await loadLibrary(); renderLibrary();
 }
@@ -2907,25 +3482,31 @@ function openSpellBook(floorId, spellId) {
   const spell = (cachedSpells[parseInt(floorId)]||[]).find(s => s.id === spellId);
   if (!spell) return;
 
-  const accentColor = spell.circle_color || '#7a9dbb';
   const canDelete = currentUser && (currentUser.is_admin || currentUser.id === spell.author_id);
 
-  document.getElementById('book-spell-name').textContent  = spell.name;
-  document.getElementById('book-explanation').textContent = spell.explanation || '—';
+  // ── render circle via engine ──
+  const frame = document.getElementById('book-circle-frame');
+  let accentColor = spell.circle_color || '#7a9dbb';
+  if (spell.circle_code && spell.circle_code.trim()) {
+    const result = SCE.renderSVG(spell.circle_code.trim());
+    if (result) {
+      frame.innerHTML = result.svg;
+      accentColor = result.pal.s; // use actual computed palette colour
+    } else {
+      frame.innerHTML = `<div class="spell-circle-placeholder" style="color:${accentColor}">⬡<br><br>Invalid formula.</div>`;
+    }
+  } else {
+    frame.innerHTML = `<div class="spell-circle-placeholder" style="color:${accentColor}">⬡<br><br>No formula provided.</div>`;
+  }
 
-  // byline + delete button
-  const byline = document.getElementById('book-byline');
-  byline.innerHTML = `— ${spell.author_name || 'Unknown'}
-    ${canDelete ? `<button onclick="deleteSpell('${spell.id}',${floorId})" style="margin-left:1rem;font-family:var(--font-display);font-size:0.48rem;letter-spacing:0.1em;color:#c0392b;background:transparent;border:1px solid rgba(192,57,43,0.35);padding:2px 8px;border-radius:2px;cursor:pointer">✕ Delete Spell</button>` : ''}`;
-
-  const leftNum  = document.getElementById('book-page-left-num');
-  const rightNum = document.getElementById('book-page-right-num');
-  if (leftNum)  leftNum.textContent  = FLOORS[parseInt(floorId)-1]?.tier + ' · ' + spell.name;
-  if (rightNum) rightNum.textContent = "Mage's Notes";
-
-  // Stats grid — use architect stat names
+  // ── compute stats via engine ──
   const sg = document.getElementById('book-stats-grid');
-  const stats = spell.stats || {};
+  let stats = {};
+  if (spell.circle_code && spell.circle_code.trim()) {
+    stats = SCE.computeStats(spell.circle_code.trim());
+  } else {
+    stats = spell.stats || {};
+  }
   const statEntries = Object.entries(stats).filter(([,v]) => v && v !== '—');
   sg.innerHTML = statEntries.length
     ? statEntries.map(([k,v]) =>
@@ -2933,40 +3514,27 @@ function openSpellBook(floorId, spellId) {
           <div class="spell-stat-label" style="color:${accentColor}">${k}</div>
           <div class="spell-stat-value">${v}</div>
         </div>`).join('')
-    : `<div style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);font-size:0.82rem;grid-column:1/-1;text-align:center;padding:0.5rem">No stats recorded.</div>`;
+    : `<div style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);font-size:0.82rem;grid-column:1/-1;text-align:center;padding:0.5rem">No stats available.</div>`;
 
-  // Circle — load formula in iframe via postMessage after load
-  const frame = document.getElementById('book-circle-frame');
-  if (spell.circle_code && spell.circle_code.trim()) {
-    frame.innerHTML = `<iframe
-      id="spell-circle-iframe"
-      src="spell_circle_architect_3d.html"
-      style="width:100%;height:100%;border:none;background:#05030a"
-      title="Spell Circle"
-      loading="lazy">
-    </iframe>`;
-    const iframe = frame.querySelector('iframe');
-    iframe.addEventListener('load', () => {
-      try {
-        iframe.contentWindow.postMessage({
-          type: 'loadFormula',
-          formula: spell.circle_code.trim(),
-          color: accentColor,
-        }, '*');
-      } catch(e) { console.log('iframe postMessage failed', e); }
-    });
-  } else {
-    frame.innerHTML = `<div class="spell-circle-placeholder" style="color:${accentColor};opacity:0.5">
-      ⬡<br><br>No formula provided.<br>
-      <span style="font-size:0.72rem;opacity:0.6">Add a spell circle via Spell Architect</span>
-    </div>`;
-  }
+  // ── fill text ──
+  document.getElementById('book-spell-name').textContent  = spell.name;
+  document.getElementById('book-explanation').textContent = spell.explanation || '—';
+
+  const byline = document.getElementById('book-byline');
+  byline.innerHTML = `— ${spell.author_name || 'Unknown'}
+    ${canDelete ? `<button onclick="deleteSpell('${spell.id}',${floorId})" style="margin-left:1rem;font-family:var(--font-display);font-size:0.48rem;letter-spacing:0.1em;color:#c0392b;background:transparent;border:1px solid rgba(192,57,43,0.35);padding:2px 8px;border-radius:2px;cursor:pointer">✕ Delete Spell</button>` : ''}`;
+
+  const leftNum  = document.getElementById('book-page-left-num');
+  const rightNum = document.getElementById('book-page-right-num');
+  if (leftNum)  leftNum.textContent  = (spell.floor ? (FLOORS[spell.floor-1]?.tier || '') : '') + ' · ' + spell.name;
+  if (rightNum) rightNum.textContent = "Mage's Notes";
 
   document.getElementById('spell-book-view').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
 async function deleteSpell(spellId, floorId) {
+  if (!currentUser) return;
   if (!confirm('Delete this spell permanently?')) return;
   const { error } = await sb.from('spells').delete().eq('id', spellId);
   if (error) { showToast('Error: ' + error.message); return; }
@@ -2984,11 +3552,27 @@ function closeSpellBook() {
 //  MAGE REGISTRY
 // ═══════════════════════════════════════════════════════
 async function loadMages() {
-  const { data, error } = await sb.from('profiles')
-    .select('id, name, rank, place, rank_pending, place_pending, claimed_rank, claimed_place, is_admin')
-    .order('name');
-  if (error) { console.error('loadMages error:', error.message); cachedMages = []; return; }
-  cachedMages = data || [];
+  try {
+    const { data, error } = await sb.from('profiles')
+      .select('id, name, rank, place, rank_pending, place_pending, claimed_rank, claimed_place, is_admin')
+      .order('name');
+    if (error) throw error;
+    cachedMages = data || [];
+  } catch (err) {
+    // DataCloneError from Supabase internal postMessage — retry once after short delay
+    if (err && err.name === 'DataCloneError') {
+      await new Promise(r => setTimeout(r, 500));
+      try {
+        const { data } = await sb.from('profiles')
+          .select('id, name, rank, place, rank_pending, place_pending, claimed_rank, claimed_place, is_admin')
+          .order('name');
+        cachedMages = data || [];
+      } catch(e2) { cachedMages = []; }
+    } else {
+      console.error('loadMages error:', err?.message || err);
+      cachedMages = [];
+    }
+  }
 }
 
 function rankClass(rank) {
@@ -3182,7 +3766,6 @@ function closeModal(id) { document.getElementById(id)?.classList.remove('open');
 // ═══════════════════════════════════════════════════════
 //  GENERAL DISCUSSIONS
 // ═══════════════════════════════════════════════════════
-let discChannel = null;
 
 async function initDiscussions() {
   await loadMessages();
@@ -3272,29 +3855,16 @@ function containsBanned(text) {
   return BANNED.some(w => lower.split(' ').includes(w));
 }
 
+let discPollInterval = null;
+
 function setupRealtimeMessages() {
-  if (discChannel) { sb.removeChannel(discChannel); discChannel = null; }
-  discChannel = sb.channel('public-messages', {
-    config: { broadcast: { self: true } }
-  })
-    .on('postgres_changes', {
-      event: 'INSERT', schema: 'public', table: 'messages'
-    }, payload => {
-      const feed  = document.getElementById('disc-feed');
-      const empty = document.getElementById('disc-empty');
-      if (!feed) return;
-      if (empty) empty.style.display = 'none';
-      feed.appendChild(buildMsgEl(payload.new));
-      feed.scrollTop = feed.scrollHeight;
-    })
-    .on('postgres_changes', {
-      event: 'DELETE', schema: 'public', table: 'messages'
-    }, () => {
-      loadMessages();
-    })
-    .subscribe((status) => {
-      console.log('Realtime status:', status);
-    });
+  // Simple polling — check for new messages every 3 seconds
+  if (discPollInterval) clearInterval(discPollInterval);
+  discPollInterval = setInterval(async () => {
+    const feed = document.getElementById('disc-feed');
+    if (!feed) return;
+    await loadMessages();
+  }, 3000);
 }
 
 async function postDiscMessage() {
@@ -3366,6 +3936,9 @@ window.switchTab = function(btn) {
   if (btn.dataset.page === 'discussions') {
     initDiscussions();
     updateDiscComposer();
+  } else {
+    // stop polling when leaving discussions
+    if (discPollInterval) { clearInterval(discPollInterval); discPollInterval = null; }
   }
 };
 
