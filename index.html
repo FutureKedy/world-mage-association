@@ -829,9 +829,9 @@ html, body {
 .spell-circle-frame {
   width:100%; max-width:380px;
   aspect-ratio:1;
-  background:#05030a;
+  background:transparent;
   display:flex; align-items:center; justify-content:center;
-  margin:0.8rem auto 1.2rem;
+  margin:0.8rem auto 0.4rem;
   overflow:visible;
   position:relative; z-index:1;
 }
@@ -1699,7 +1699,7 @@ html, body {
   </div>
   <div class="dropdown-item" onclick="closeDropdown(); openProfile()">My Profile</div>
   <div class="dropdown-item" onclick="closeDropdown(); openProfile()">My Submissions</div>
-  <div class="dropdown-item" onclick="closeDropdown()">Settings</div>
+  <div class="dropdown-item" onclick="closeDropdown(); document.querySelector('[data-page=settings]').click()">Settings</div>
   <div class="dropdown-item danger" onclick="logout()">Sign Out</div>
 </div>
 
@@ -1834,6 +1834,7 @@ html, body {
   <button class="tab-btn" data-page="registry" onclick="switchTab(this)">Mage Registry</button>
   <button class="tab-btn" data-page="discussions" onclick="switchTab(this)">⟨ General Discussions ⟩</button>
   <button class="tab-btn admin-tab" data-page="admin" id="admin-tab" style="display:none" onclick="switchTab(this)">⚑ Archmage Panel</button>
+  <button class="tab-btn" data-page="settings" id="settings-tab" style="display:none" onclick="switchTab(this)">⚙ Settings</button>
 </nav>
 
 <!-- ═══════════════════════ MAIN CONTENT ═══════════════════════ -->
@@ -2134,26 +2135,110 @@ html, body {
     </div>
   </div>
 
+  <!-- ══════════════ SETTINGS ══════════════ -->
+  <div class="page-panel" id="page-settings">
+    <h1 class="section-title"><span class="ornament">⚙</span> Settings</h1>
+    <p class="section-subtitle">Manage your account, rank, and institutional affiliation</p>
+
+    <div style="max-width:640px;display:flex;flex-direction:column;gap:1.5rem">
+
+      <!-- Change Password -->
+      <div class="admin-section">
+        <div class="admin-section-title">🔒 Change Password</div>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <input class="form-input" type="password" id="settings-new-password" placeholder="New password (min. 6 characters)…">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm New Password</label>
+          <input class="form-input" type="password" id="settings-confirm-password" placeholder="Confirm new password…">
+        </div>
+        <button class="btn-primary" onclick="changePassword()">Update Password</button>
+      </div>
+
+      <!-- Request Rank Up -->
+      <div class="admin-section">
+        <div class="admin-section-title">⬆ Apply for Rank Promotion</div>
+        <p style="font-family:var(--font-italic);font-style:italic;font-size:0.88rem;color:var(--ink-light);margin-bottom:0.8rem">
+          Your current rank: <strong id="settings-current-rank">—</strong><br>
+          Promotion must be confirmed by an Archmage or a confirmed mage of equal or greater rank from your institution.
+        </p>
+        <div class="form-group">
+          <label class="form-label">Requested Rank</label>
+          <select class="form-select" id="settings-rank-request">
+            <option value="">— Select a rank —</option>
+            <option value="Official Mage">Official Mage</option>
+            <option value="Great Mage">Great Mage</option>
+            <option value="Grand Mage">Grand Mage</option>
+            <option value="Archmage">Archmage</option>
+          </select>
+          <p class="form-note">You may only request a rank higher than your current one. If you already have a pending request it will be replaced.</p>
+        </div>
+        <div id="settings-rank-pending-note" style="display:none;font-family:var(--font-italic);font-style:italic;font-size:0.82rem;color:#c0392b;margin-bottom:0.6rem">
+          ⏳ You have a pending rank request: <strong id="settings-rank-pending-val"></strong>
+        </div>
+        <button class="btn-primary" onclick="requestRankUp()">Submit Rank Request</button>
+      </div>
+
+      <!-- Change Institutional Affiliation -->
+      <div class="admin-section">
+        <div class="admin-section-title">⌖ Change Institutional Affiliation</div>
+        <p style="font-family:var(--font-italic);font-style:italic;font-size:0.88rem;color:var(--ink-light);margin-bottom:0.8rem">
+          Current affiliation: <strong id="settings-current-place">—</strong><br>
+          A change must be confirmed by an Archmage or a confirmed mage of equal or greater rank at the new institution.
+        </p>
+        <div class="form-group">
+          <label class="form-label">Requested Institution</label>
+          <select class="form-select" id="settings-place-request">
+            <option value="">— Select institution —</option>
+            <option>Akademia</option>
+            <option>Imperial Court Mages</option>
+            <option>Imperial Magic Corps</option>
+            <option>Tower of Water</option>
+            <option>Tower of Ice</option>
+            <option>Tower of Fire</option>
+            <option>Tower of Earth</option>
+            <option>Tower of Lightning</option>
+            <option>Tower of Solitude</option>
+            <option>Clock Tower</option>
+            <option>Magic Corps of Thorns</option>
+          </select>
+          <p class="form-note">If you already have a pending affiliation request it will be replaced.</p>
+        </div>
+        <div id="settings-place-pending-note" style="display:none;font-family:var(--font-italic);font-style:italic;font-size:0.82rem;color:#c0392b;margin-bottom:0.6rem">
+          ⏳ Pending affiliation: <strong id="settings-place-pending-val"></strong>
+        </div>
+        <button class="btn-primary" onclick="requestPlaceChange()">Submit Affiliation Request</button>
+      </div>
+
+    </div>
+  </div>
+
 </main>
 
 <!-- ═══════════════════════ SPELL BOOK VIEW (fullscreen) ═══════════════════════ -->
 <div class="spell-book-view" id="spell-book-view">
   <div class="spell-book-container">
-    <!-- Left page: circle + stats -->
+    <button class="btn-close-book" onclick="closeSpellBook()">✕ Close Tome</button>
+
+    <!-- Left page: circle + formula -->
     <div class="spell-page spell-page-left">
       <div class="page-number" id="book-page-left-num">I</div>
       <div class="spell-title-display" id="book-spell-name">—</div>
       <div class="spell-circle-frame" id="book-circle-frame">
-        <div class="spell-circle-placeholder">Spell circle diagram<br>will appear here</div>
+        <div class="spell-circle-placeholder">Spell circle will appear here</div>
       </div>
-      <div class="spell-stats-grid" id="book-stats-grid"></div>
+      <div id="book-formula-display" style="font-family:monospace;font-size:0.65rem;color:var(--ink-light);text-align:center;padding:0.4rem 0.8rem 0;word-break:break-all;max-width:100%;opacity:0.55;line-height:1.4"></div>
     </div>
+
     <!-- Spine -->
     <div class="book-spine-divider"></div>
-    <!-- Right page: explanation -->
-    <div class="spell-page spell-page-right" style="position:relative">
-      <button class="btn-close-book" onclick="closeSpellBook()">✕ Close</button>
-      <div class="page-number" id="book-page-right-num" style="margin-top:2rem">II</div>
+
+    <!-- Right page: stats + explanation + byline -->
+    <div class="spell-page spell-page-right">
+      <div class="page-number" id="book-page-right-num">II</div>
+      <div class="spell-stats-grid" id="book-stats-grid" style="margin-bottom:1.2rem"></div>
+      <div style="border-top:1px solid var(--cream-border);margin:0 0 1rem"></div>
       <div class="spell-explanation" id="book-explanation">—</div>
       <div class="spell-mage-byline" id="book-byline">— By Mage Name</div>
     </div>
@@ -2361,6 +2446,9 @@ window.removeEssential  = removeEssential;
 window.deleteMessage      = deleteMessage;
 window.deleteSpell        = deleteSpell;
 window.postDiscMessage    = postDiscMessage;
+window.changePassword     = changePassword;
+window.requestRankUp      = requestRankUp;
+window.requestPlaceChange = requestPlaceChange;
 window.openProfile       = openProfile;
 window.closeProfile      = closeProfile;
 window.approveRank      = approveRank;
@@ -2766,7 +2854,7 @@ const SCE = (() => {
     const vb=computeViewBox(layers,numLayers,semiCircles);
     const pfx='sce_';
 
-    let html=`<svg viewBox="${vb.x.toFixed(1)} ${vb.y.toFixed(1)} ${vb.w.toFixed(1)} ${vb.h.toFixed(1)}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;background:#05030a;display:block">
+    let html=`<svg viewBox="${vb.x.toFixed(1)} ${vb.y.toFixed(1)} ${vb.w.toFixed(1)} ${vb.h.toFixed(1)}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;background:transparent;display:block">
       <style>
         @keyframes scecw  {to{transform:rotate( 360deg)}}
         @keyframes sceccw {to{transform:rotate(-360deg)}}
@@ -2776,8 +2864,7 @@ const SCE = (() => {
         <filter id="sceglow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         <filter id="sceglow2"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         <filter id="scecoreglow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      </defs>
-      <rect x="${vb.x.toFixed(1)}" y="${vb.y.toFixed(1)}" width="${vb.w.toFixed(1)}" height="${vb.h.toFixed(1)}" fill="#05030a"/>`;
+      </defs>`;
 
     // main circle
     html+=drawCircleAt(layers,numLayers,pal,CX,CY,pfx);
@@ -3093,12 +3180,14 @@ function renderLoggedIn() {
   const badge = document.getElementById('profile-pending-badge');
   badge.style.display = (currentUser.rank_pending || currentUser.place_pending) ? 'block' : 'none';
   document.getElementById('admin-tab').style.display = currentUser.is_admin ? '' : 'none';
+  document.getElementById('settings-tab').style.display = '';
 }
 
 function renderLoggedOut() {
   document.getElementById('profile-display-logged-out').style.display = '';
   document.getElementById('profile-display-logged-in').style.display  = 'none';
   document.getElementById('admin-tab').style.display = 'none';
+  document.getElementById('settings-tab').style.display = 'none';
 }
 
 function openLoginModal()    { closeDropdown(); openModal('login-modal'); }
@@ -3264,7 +3353,8 @@ function filterPapers() { renderPapers(); }
 
 function openSubmitModal() {
   if (!currentUser) { showToast('Sign in to submit'); return; }
-  if (RANKS.indexOf(currentUser.rank) < 3) { showToast('Only Grand Mages and above may submit papers'); return; }
+  const rankIdx = RANKS.indexOf(currentUser.rank);
+  if (rankIdx < 3) { showToast('Only Grand Mages and above may submit papers'); return; }
   openModal('submit-paper-modal');
 }
 
@@ -3272,20 +3362,24 @@ async function submitPaper() {
   const title    = document.getElementById('paper-title-input').value.trim();
   const abstract = document.getElementById('paper-abstract-input').value.trim();
   if (!title) { showToast('Please enter a title'); return; }
+  if (!currentUser) { showToast('You must be signed in'); return; }
+  const btn = document.querySelector('#submit-paper-modal .btn-primary');
+  if (btn) btn.textContent = 'Submitting…';
   const { error } = await sb.from('papers').insert({
     title, abstract,
     author_id:   currentUser.id,
     author_name: currentUser.rank + ' ' + currentUser.name,
-    place:       currentUser.place,
+    place:       currentUser.place || '—',
     status:      'pending',
     points:      0,
   });
+  if (btn) btn.textContent = 'Submit for Review ✦';
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal('submit-paper-modal');
   document.getElementById('paper-title-input').value = '';
   document.getElementById('paper-abstract-input').value = '';
   showToast('Paper submitted for review');
-  await loadPapers(); renderPapers();
+  await loadPapers(); renderPapers(); renderAcademicPapers();
 }
 
 async function decayPoints() {
@@ -3380,12 +3474,22 @@ function shadeColor(hex, amt) {
 }
 
 function buildShelvesHTML(spells, floorId, canAdd) {
-  const numShelves = Math.max(3, Math.ceil((spells.length + (canAdd?1:0)) / BOOKS_PER_SHELF));
+  // Always show at least 3 shelves
+  const fullRows    = Math.floor(spells.length / BOOKS_PER_SHELF);
+  const remainder   = spells.length % BOOKS_PER_SHELF;
+  // Add slot goes in a new row only when the current row is completely full
+  const addInNewRow = canAdd && remainder === 0;
+  const numShelves  = Math.max(3, fullRows + (remainder > 0 ? 1 : 0) + (addInNewRow ? 1 : 0));
+
   let html = '';
-  for (let row=0; row<numShelves; row++) {
-    const rowSpells = spells.slice(row*BOOKS_PER_SHELF, (row+1)*BOOKS_PER_SHELF);
-    let books = rowSpells.map((s,i) => buildSpineHTML(s, row*BOOKS_PER_SHELF+i, floorId)).join('');
-    if (canAdd && row === Math.ceil(spells.length/BOOKS_PER_SHELF)) {
+  for (let row = 0; row < numShelves; row++) {
+    const rowSpells = spells.slice(row * BOOKS_PER_SHELF, (row + 1) * BOOKS_PER_SHELF);
+    let books = rowSpells.map((s, i) => buildSpineHTML(s, row * BOOKS_PER_SHELF + i, floorId)).join('');
+    // Add slot: in the row after spells if that row is full, or at end of last partial row
+    const isLastSpellRow = row === Math.floor((spells.length - 1) / BOOKS_PER_SHELF);
+    const isAddRow       = canAdd && (addInNewRow ? row === fullRows : isLastSpellRow && remainder > 0 && remainder < BOOKS_PER_SHELF);
+    const isEmptyAddRow  = canAdd && spells.length === 0 && row === 0;
+    if (isAddRow || isEmptyAddRow) {
       books += `<div class="book-spine book-add-slot" style="width:30px;height:110px"
         onclick="openAddSpell(${floorId})" title="Add spell">
         <div class="book-spine-title">+</div>
@@ -3528,6 +3632,10 @@ function openSpellBook(floorId, spellId) {
   const rightNum = document.getElementById('book-page-right-num');
   if (leftNum)  leftNum.textContent  = (spell.floor ? (FLOORS[spell.floor-1]?.tier || '') : '') + ' · ' + spell.name;
   if (rightNum) rightNum.textContent = "Mage's Notes";
+
+  // ── formula display below circle ──
+  const formulaEl = document.getElementById('book-formula-display');
+  if (formulaEl) formulaEl.textContent = (spell.circle_code || '').trim();
 
   document.getElementById('spell-book-view').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -3787,28 +3895,46 @@ function updateDiscComposer() {
   }
 }
 
+let _lastMessageIds = new Set();
+
 async function loadMessages() {
   const { data } = await sb.from('messages')
     .select('*').order('created_at', { ascending: true });
-  renderMessages(data || []);
-}
-
-function renderMessages(msgs) {
+  const msgs = data || [];
   const feed  = document.getElementById('disc-feed');
   const empty = document.getElementById('disc-empty');
   if (!feed) return;
 
-  // remove existing message nodes (keep empty div)
-  feed.querySelectorAll('.disc-msg').forEach(el => el.remove());
+  const newIds = new Set(msgs.map(m => m.id));
+
+  // Check for deletions — remove any msg no longer in results
+  feed.querySelectorAll('.disc-msg').forEach(el => {
+    if (!newIds.has(el.dataset.id)) el.remove();
+  });
+
+  // Add only new messages (not already in DOM)
+  let added = 0;
+  msgs.forEach(m => {
+    if (!_lastMessageIds.has(m.id) && !feed.querySelector(`.disc-msg[data-id="${m.id}"]`)) {
+      if (empty) empty.style.display = 'none';
+      feed.appendChild(buildMsgEl(m));
+      added++;
+    }
+  });
+
+  _lastMessageIds = newIds;
 
   if (!msgs.length) {
+    feed.querySelectorAll('.disc-msg').forEach(e => e.remove());
     if (empty) empty.style.display = 'flex';
     return;
   }
-  if (empty) empty.style.display = 'none';
 
-  msgs.forEach(m => feed.appendChild(buildMsgEl(m)));
-  feed.scrollTop = feed.scrollHeight;
+  // Only auto-scroll if user is already near the bottom, or new messages were added by them
+  if (added > 0) {
+    const distFromBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight;
+    if (distFromBottom < 120) feed.scrollTop = feed.scrollHeight;
+  }
 }
 
 function buildMsgEl(m) {
@@ -3885,12 +4011,9 @@ async function postDiscMessage() {
   if (error) { showToast('Error: ' + error.message); return; }
   ta.value = '';
   document.getElementById('disc-char-count').textContent = '0 / 500';
-  // fallback — manually reload if realtime hasn't kicked in yet
-  setTimeout(() => loadMessages().then(() => {
-    const feed = document.getElementById('disc-feed');
-    const msgs = feed?.querySelectorAll('.disc-msg');
-    if (!msgs?.length) renderMessages([]); // empty check
-  }), 400);
+  await loadMessages();
+  const feed = document.getElementById('disc-feed');
+  if (feed) feed.scrollTop = feed.scrollHeight;
 }
 
 // char counter
@@ -3936,8 +4059,9 @@ window.switchTab = function(btn) {
   if (btn.dataset.page === 'discussions') {
     initDiscussions();
     updateDiscComposer();
+  } else if (btn.dataset.page === 'settings') {
+    populateSettings();
   } else {
-    // stop polling when leaving discussions
     if (discPollInterval) { clearInterval(discPollInterval); discPollInterval = null; }
   }
 };
@@ -4013,7 +4137,100 @@ function closeProfile() {
   document.body.style.overflow = '';
 }
 
-function showToast(msg) {
+// ═══════════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════════
+function populateSettings() {
+  if (!currentUser) return;
+  const cr = document.getElementById('settings-current-rank');
+  const cp = document.getElementById('settings-current-place');
+  if (cr) cr.textContent = currentUser.rank || '—';
+  if (cp) cp.textContent = currentUser.place || 'Unaffiliated';
+
+  // Filter rank options to only show ranks above current
+  const curIdx = RANKS.indexOf(currentUser.rank);
+  const sel = document.getElementById('settings-rank-request');
+  if (sel) {
+    Array.from(sel.options).forEach(opt => {
+      if (!opt.value) return;
+      opt.disabled = RANKS.indexOf(opt.value) <= curIdx;
+      opt.style.opacity = RANKS.indexOf(opt.value) <= curIdx ? '0.4' : '1';
+    });
+  }
+
+  // Show pending notes
+  const rankNote = document.getElementById('settings-rank-pending-note');
+  const rankVal  = document.getElementById('settings-rank-pending-val');
+  if (rankNote && rankVal) {
+    if (currentUser.rank_pending && currentUser.claimed_rank) {
+      rankNote.style.display = 'block';
+      rankVal.textContent = currentUser.claimed_rank;
+    } else {
+      rankNote.style.display = 'none';
+    }
+  }
+  const placeNote = document.getElementById('settings-place-pending-note');
+  const placeVal  = document.getElementById('settings-place-pending-val');
+  if (placeNote && placeVal) {
+    if (currentUser.place_pending && currentUser.claimed_place) {
+      placeNote.style.display = 'block';
+      placeVal.textContent = currentUser.claimed_place;
+    } else {
+      placeNote.style.display = 'none';
+    }
+  }
+}
+
+async function changePassword() {
+  if (!currentUser) { showToast('You must be signed in'); return; }
+  const np = document.getElementById('settings-new-password').value;
+  const cp = document.getElementById('settings-confirm-password').value;
+  if (!np || np.length < 6) { showToast('Password must be at least 6 characters'); return; }
+  if (np !== cp) { showToast('Passwords do not match'); return; }
+  const { error } = await sb.auth.updateUser({ password: np });
+  if (error) { showToast('Error: ' + error.message); return; }
+  document.getElementById('settings-new-password').value = '';
+  document.getElementById('settings-confirm-password').value = '';
+  showToast('Password updated successfully');
+}
+
+async function requestRankUp() {
+  if (!currentUser) { showToast('You must be signed in'); return; }
+  const requested = document.getElementById('settings-rank-request').value;
+  if (!requested) { showToast('Please select a rank'); return; }
+  const curIdx = RANKS.indexOf(currentUser.rank);
+  const reqIdx = RANKS.indexOf(requested);
+  if (reqIdx <= curIdx) { showToast('You can only request a rank higher than your current one'); return; }
+  const { error } = await sb.from('profiles').update({
+    claimed_rank: requested,
+    rank_pending: true,
+  }).eq('id', currentUser.id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  currentUser.claimed_rank = requested;
+  currentUser.rank_pending = true;
+  showToast('Rank request submitted — awaiting confirmation');
+  populateSettings();
+  renderLoggedIn();
+}
+
+async function requestPlaceChange() {
+  if (!currentUser) { showToast('You must be signed in'); return; }
+  const requested = document.getElementById('settings-place-request').value;
+  if (!requested) { showToast('Please select an institution'); return; }
+  if (requested === currentUser.place) { showToast('That is already your current affiliation'); return; }
+  const { error } = await sb.from('profiles').update({
+    claimed_place: requested,
+    place_pending: true,
+  }).eq('id', currentUser.id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  currentUser.claimed_place = requested;
+  currentUser.place_pending = true;
+  showToast('Affiliation request submitted — awaiting confirmation');
+  populateSettings();
+  renderLoggedIn();
+}
+
+
   const t = document.getElementById('toast');
   if (!t) return;
   t.textContent = msg;
