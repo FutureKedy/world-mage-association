@@ -3105,12 +3105,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadAll();
   updateDiscComposer();
 
-  // listen for future auth changes — skip INITIAL_SESSION since we handled it above
+  // listen for future auth changes — skip if already handled by doLogin/logout
   sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'INITIAL_SESSION') return; // already handled above
+    if (event === 'INITIAL_SESSION') return;
+    // If currentUser state already matches the session, skip (doLogin/logout handled it)
+    const sessionUid = session?.user?.id || null;
+    const currentUid = currentUser?.id || null;
+    if (sessionUid === currentUid) return; // already in sync
     if (event === 'SIGNED_IN' && session?.user) {
       await loadCurrentUser(session.user.id);
-      _loadAllRunning = false; // reset mutex on new sign-in
+      _loadAllRunning = false;
       await loadAll();
       updateDiscComposer();
     } else if (event === 'SIGNED_OUT') {
@@ -3201,9 +3205,16 @@ async function doLogin() {
   const email = document.getElementById('login-name').value.trim();
   const pass  = document.getElementById('login-password').value;
   if (!email || !pass) { showToast('Please enter email and password'); return; }
-  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
   if (error) { showToast('Sign in failed: ' + error.message); return; }
   closeModal('login-modal');
+  // Immediately update UI — don't wait for onAuthStateChange
+  if (data.user) {
+    await loadCurrentUser(data.user.id);
+    _loadAllRunning = false;
+    await loadAll();
+    updateDiscComposer();
+  }
   showToast('Welcome back!');
 }
 
@@ -3253,6 +3264,12 @@ async function doRegister() {
 async function logout() {
   await sb.auth.signOut();
   closeDropdown();
+  // Immediately update UI — don't wait for onAuthStateChange
+  currentUser = null;
+  renderLoggedOut();
+  _loadAllRunning = false;
+  await loadAll();
+  updateDiscComposer();
   showToast('Signed out');
 }
 
@@ -3938,21 +3955,44 @@ async function renderAdminPanel() {
 }
 
 async function approveRank(uid, claimedRank) {
-  const rankIndex = RANKS.indexOf(claimedRank);
-  await sb.from('profiles').update({ rank:claimedRank, claimed_rank:null, rank_pending:false }).eq('id',uid);
-  showToast('Rank approved'); renderAdminPanel(); loadMages().then(renderMages);
+  const { error } = await sb.from('profiles')
+    .update({ rank: claimedRank, claimed_rank: null, rank_pending: false })
+    .eq('id', uid);
+  if (error) { showToast('Error approving rank: ' + error.message); return; }
+  showToast('Rank approved');
+  await loadMages();
+  renderMages();
+  await renderAdminPanel();
 }
 async function rejectRank(uid) {
-  await sb.from('profiles').update({ claimed_rank:null, rank_pending:false }).eq('id',uid);
-  showToast('Rank rejected'); renderAdminPanel();
+  const { error } = await sb.from('profiles')
+    .update({ claimed_rank: null, rank_pending: false })
+    .eq('id', uid);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Rank rejected');
+  await loadMages();
+  renderMages();
+  await renderAdminPanel();
 }
 async function approvePlace(uid, claimedPlace) {
-  await sb.from('profiles').update({ place:claimedPlace, claimed_place:null, place_pending:false }).eq('id',uid);
-  showToast('Affiliation approved'); renderAdminPanel(); loadMages().then(renderMages);
+  const { error } = await sb.from('profiles')
+    .update({ place: claimedPlace, claimed_place: null, place_pending: false })
+    .eq('id', uid);
+  if (error) { showToast('Error approving affiliation: ' + error.message); return; }
+  showToast('Affiliation approved');
+  await loadMages();
+  renderMages();
+  await renderAdminPanel();
 }
 async function rejectPlace(uid) {
-  await sb.from('profiles').update({ claimed_place:null, place_pending:false }).eq('id',uid);
-  showToast('Affiliation rejected'); renderAdminPanel();
+  const { error } = await sb.from('profiles')
+    .update({ claimed_place: null, place_pending: false })
+    .eq('id', uid);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Affiliation rejected');
+  await loadMages();
+  renderMages();
+  await renderAdminPanel();
 }
 async function approvePaper(id) {
   const { error } = await sb.from('papers').update({ status: 'reviewed', points: 1000 }).eq('id', id);
