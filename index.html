@@ -2431,6 +2431,7 @@ window.closeDropdown    = closeDropdown;
 window.logout           = logout;
 window.doLogin          = doLogin;
 window.doRegister       = doRegister;
+window.openPaper         = openPaper;
 window.filterPapers     = filterPapers;
 window.recommendPaper   = recommendPaper;
 window.openSubmitModal  = openSubmitModal;
@@ -3318,6 +3319,22 @@ function renderAcademicPapers() {
     '<p style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);padding:2rem">No papers submitted yet.</p>';
 }
 
+function openPaper(id) {
+  const paper = cachedPapers.find(p => p.id === id);
+  if (!paper || !paper.file_url) { showToast('No file attached to this paper'); return; }
+  // Open data URL in new tab
+  const win = window.open('', '_blank');
+  if (!win) { showToast('Allow popups to open papers'); return; }
+  // For HTML files embed directly, for others use object tag
+  const isHtml = paper.file_url.startsWith('data:text/html');
+  if (isHtml) {
+    win.document.write(atob(paper.file_url.split(',')[1]));
+    win.document.close();
+  } else {
+    win.location.href = paper.file_url;
+  }
+}
+
 function paperCardHTML(p, showAbstract=false) {
   const isPending  = p.status !== 'reviewed';
   const alreadyRec = myRecommendations.has(p.id);
@@ -3325,19 +3342,19 @@ function paperCardHTML(p, showAbstract=false) {
   const hasFile    = p.file_url && p.file_url.trim();
   return `<div class="paper-card ${isPending?'pending':''}">
     <div class="paper-card-body">
-      <div class="paper-card-title" ${hasFile ? `style="cursor:pointer;text-decoration:underline;text-underline-offset:3px" onclick="window.open('${p.file_url}','_blank')"` : ''}>${p.title}${hasFile ? ' <span style="font-size:0.7rem;opacity:0.6">\u2197</span>' : ''}</div>
-      <div class="paper-card-meta">${p.author_name||'Unknown'} \u00b7 ${p.place||'\u2014'}</div>
+      <div class="paper-card-title" ${hasFile ? `style="cursor:pointer;text-decoration:underline;text-underline-offset:3px" onclick="openPaper('${p.id}')"` : ''}>${p.title}${hasFile ? ' <span style="font-size:0.7rem;opacity:0.6">&#8599;</span>' : ''}</div>
+      <div class="paper-card-meta">${p.author_name||'Unknown'} &middot; ${p.place||'&mdash;'}</div>
       ${showAbstract && p.abstract ? `<p style="font-size:0.85rem;color:var(--ink-light);margin:0.4rem 0;font-style:italic">${p.abstract}</p>` : ''}
       <div class="paper-card-tags">
-        <span class="paper-tag ${isPending?'pending-tag':'reviewed-tag'}">${isPending?'\u23f3 Pending Review':'\u2713 Peer Reviewed'}</span>
+        <span class="paper-tag ${isPending?'pending-tag':'reviewed-tag'}">${isPending?'&#x23F3; Pending Review':'&#x2713; Peer Reviewed'}</span>
         ${p.place ? `<span class="paper-tag">${p.place}</span>` : ''}
       </div>
     </div>
     <div class="paper-card-actions">
       <button class="recommend-btn" ${canRec?'':'disabled'} onclick="recommendPaper('${p.id}')">
-        \u2726 Recommend (+${recommendWeight()})
+        &#x2726; Recommend (+${recommendWeight()})
       </button>
-      <div class="rec-count">${alreadyRec?'\u2713 Recommended':''}</div>
+      <div class="rec-count">${alreadyRec?'&#x2713; Recommended':''}</div>
     </div>
     <div class="paper-points-badge">${(p.points||0).toLocaleString()} pts</div>
   </div>`;
