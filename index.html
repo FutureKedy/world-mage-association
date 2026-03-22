@@ -2433,6 +2433,7 @@ window.doLogin          = doLogin;
 window.doRegister       = doRegister;
 window.openPaper         = openPaper;
 window.downloadPaper     = downloadPaper;
+window.deletePaper       = deletePaper;
 window.filterPapers     = filterPapers;
 window.recommendPaper   = recommendPaper;
 window.openSubmitModal  = openSubmitModal;
@@ -3322,33 +3323,34 @@ function renderAcademicPapers() {
 
 function openPaper(id) {
   const paper = cachedPapers.find(p => p.id === id);
-  if (!paper || !paper.file_url) { showToast('No file attached to this paper'); return; }
+  if (!paper) { showToast('Paper not found'); return; }
+  if (!paper.file_url) { showToast('No file attached — resubmit the paper with a file selected'); return; }
   const payload = paper.file_url;
   if (payload.startsWith('html::')) {
-    // HTML stored as text — write into new window directly
     const htmlContent = payload.slice(6);
-    const win = window.open('', '_blank');
-    if (!win) { showToast('Allow popups to open papers'); return; }
-    win.document.open();
+    const win = window.open('about:blank', '_blank');
+    if (!win) { showToast('Popup blocked — allow popups for this site then try again'); return; }
+    win.document.open('text/html', 'replace');
     win.document.write(htmlContent);
     win.document.close();
   } else {
-    // Base64 data URL — convert to blob and open
     try {
       const [header, b64] = payload.split(',');
       const mime = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
       const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
       const blob  = new Blob([bytes], { type: mime });
       const url   = URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      const win   = window.open(url, '_blank');
+      if (!win) showToast('Popup blocked — allow popups for this site');
       setTimeout(() => URL.revokeObjectURL(url), 60000);
-    } catch(e) { showToast('Could not open file'); }
+    } catch(e) { showToast('Could not open file: ' + e.message); }
   }
 }
 
 function downloadPaper(id) {
   const paper = cachedPapers.find(p => p.id === id);
-  if (!paper || !paper.file_url) { showToast('No file attached to this paper'); return; }
+  if (!paper) { showToast('Paper not found'); return; }
+  if (!paper.file_url) { showToast('No file attached — resubmit the paper with a file selected'); return; }
   const payload  = paper.file_url;
   const fileName = paper.file_name || paper.title;
   const a = document.createElement('a');
@@ -3359,13 +3361,12 @@ function downloadPaper(id) {
   } else {
     try {
       const [header, b64] = payload.split(',');
-      const mime = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
-      const ext  = mime.includes('pdf') ? '.pdf' : mime.includes('word') ? '.docx' : '';
+      const mime  = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
       const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
       const blob  = new Blob([bytes], { type: mime });
       a.href = URL.createObjectURL(blob);
-      a.download = fileName || ('paper' + ext);
-    } catch(e) { showToast('Could not download file'); return; }
+      a.download = fileName || 'paper';
+    } catch(e) { showToast('Could not download: ' + e.message); return; }
   }
   document.body.appendChild(a);
   a.click();
@@ -3378,6 +3379,7 @@ function paperCardHTML(p, showAbstract=false) {
   const alreadyRec = myRecommendations.has(p.id);
   const canRec     = currentUser && !alreadyRec && !isPending;
   const hasFile    = p.file_url && p.file_url.trim();
+  const canDelete  = currentUser && (currentUser.is_admin || currentUser.id === p.author_id);
   return `<div class="paper-card ${isPending?'pending':''}">
     <div class="paper-card-body">
       <div class="paper-card-title" ${hasFile ? `style="cursor:pointer;text-decoration:underline;text-underline-offset:3px" onclick="openPaper('${p.id}')"` : ''}>${p.title}${hasFile ? ' <span style="font-size:0.7rem;opacity:0.6">&#8599;</span>' : ''}</div>
@@ -3393,6 +3395,7 @@ function paperCardHTML(p, showAbstract=false) {
         &#x2726; Recommend (+${recommendWeight()})
       </button>
       ${hasFile ? `<button class="btn-secondary" onclick="downloadPaper('${p.id}')" style="font-size:0.6rem;padding:0.3rem 0.7rem">&#x2193; Download</button>` : ''}
+      ${canDelete ? `<button class="btn-secondary" onclick="deletePaper('${p.id}')" style="font-size:0.6rem;padding:0.3rem 0.7rem;color:#c0392b;border-color:rgba(192,57,43,0.4)">✕ Delete</button>` : ''}
       <div class="rec-count">${alreadyRec?'&#x2713; Recommended':''}</div>
     </div>
     <div class="paper-points-badge">${(p.points||0).toLocaleString()} pts</div>
@@ -3966,6 +3969,17 @@ async function rejectPaper(id) {
   await loadPapers();
   renderPapers();
   await renderAdminPanel();
+}
+
+async function deletePaper(id) {
+  if (!currentUser) return;
+  if (!confirm('Delete this paper permanently?')) return;
+  const { error } = await sb.from('papers').delete().eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Paper deleted');
+  await loadPapers();
+  renderPapers();
+  renderAcademicPapers();
 }
 
 // ═══════════════════════════════════════════════════════
