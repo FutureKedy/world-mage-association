@@ -3322,16 +3322,31 @@ function renderAcademicPapers() {
 function openPaper(id) {
   const paper = cachedPapers.find(p => p.id === id);
   if (!paper || !paper.file_url) { showToast('No file attached to this paper'); return; }
-  // Open data URL in new tab
-  const win = window.open('', '_blank');
-  if (!win) { showToast('Allow popups to open papers'); return; }
-  // For HTML files embed directly, for others use object tag
-  const isHtml = paper.file_url.startsWith('data:text/html');
-  if (isHtml) {
-    win.document.write(atob(paper.file_url.split(',')[1]));
-    win.document.close();
-  } else {
-    win.location.href = paper.file_url;
+  try {
+    // Convert data URL to Blob then open as blob URL — works for all file types
+    const dataUrl = paper.file_url;
+    const [header, base64] = dataUrl.split(',');
+    const mime = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: mime });
+    const url  = URL.createObjectURL(blob);
+    const win  = window.open(url, '_blank');
+    if (!win) {
+      // Popup blocked — create a temporary link and click it
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.download = paper.title + (mime.includes('html') ? '.html' : mime.includes('pdf') ? '.pdf' : '');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+    // Revoke after a delay to allow the browser to load it
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  } catch(e) {
+    showToast('Could not open file: ' + e.message);
   }
 }
 
