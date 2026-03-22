@@ -2432,6 +2432,7 @@ window.logout           = logout;
 window.doLogin          = doLogin;
 window.doRegister       = doRegister;
 window.openPaper         = openPaper;
+window.downloadPaper     = downloadPaper;
 window.filterPapers     = filterPapers;
 window.recommendPaper   = recommendPaper;
 window.openSubmitModal  = openSubmitModal;
@@ -3322,32 +3323,54 @@ function renderAcademicPapers() {
 function openPaper(id) {
   const paper = cachedPapers.find(p => p.id === id);
   if (!paper || !paper.file_url) { showToast('No file attached to this paper'); return; }
-  try {
-    // Convert data URL to Blob then open as blob URL — works for all file types
-    const dataUrl = paper.file_url;
-    const [header, base64] = dataUrl.split(',');
-    const mime = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const blob = new Blob([bytes], { type: mime });
-    const url  = URL.createObjectURL(blob);
-    const win  = window.open(url, '_blank');
-    if (!win) {
-      // Popup blocked — create a temporary link and click it
-      const a = document.createElement('a');
-      a.href = url;
-      a.target = '_blank';
-      a.download = paper.title + (mime.includes('html') ? '.html' : mime.includes('pdf') ? '.pdf' : '');
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-    // Revoke after a delay to allow the browser to load it
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
-  } catch(e) {
-    showToast('Could not open file: ' + e.message);
+  const payload = paper.file_url;
+  if (payload.startsWith('html::')) {
+    // HTML stored as text — write into new window directly
+    const htmlContent = payload.slice(6);
+    const win = window.open('', '_blank');
+    if (!win) { showToast('Allow popups to open papers'); return; }
+    win.document.open();
+    win.document.write(htmlContent);
+    win.document.close();
+  } else {
+    // Base64 data URL — convert to blob and open
+    try {
+      const [header, b64] = payload.split(',');
+      const mime = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
+      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+      const blob  = new Blob([bytes], { type: mime });
+      const url   = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch(e) { showToast('Could not open file'); }
   }
+}
+
+function downloadPaper(id) {
+  const paper = cachedPapers.find(p => p.id === id);
+  if (!paper || !paper.file_url) { showToast('No file attached to this paper'); return; }
+  const payload  = paper.file_url;
+  const fileName = paper.file_name || paper.title;
+  const a = document.createElement('a');
+  if (payload.startsWith('html::')) {
+    const blob = new Blob([payload.slice(6)], { type: 'text/html' });
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName.endsWith('.html') ? fileName : fileName + '.html';
+  } else {
+    try {
+      const [header, b64] = payload.split(',');
+      const mime = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
+      const ext  = mime.includes('pdf') ? '.pdf' : mime.includes('word') ? '.docx' : '';
+      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+      const blob  = new Blob([bytes], { type: mime });
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName || ('paper' + ext);
+    } catch(e) { showToast('Could not download file'); return; }
+  }
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
 }
 
 function paperCardHTML(p, showAbstract=false) {
@@ -3369,6 +3392,7 @@ function paperCardHTML(p, showAbstract=false) {
       <button class="recommend-btn" ${canRec?'':'disabled'} onclick="recommendPaper('${p.id}')">
         &#x2726; Recommend (+${recommendWeight()})
       </button>
+      ${hasFile ? `<button class="btn-secondary" onclick="downloadPaper('${p.id}')" style="font-size:0.6rem;padding:0.3rem 0.7rem">&#x2193; Download</button>` : ''}
       <div class="rec-count">${alreadyRec?'&#x2713; Recommended':''}</div>
     </div>
     <div class="paper-points-badge">${(p.points||0).toLocaleString()} pts</div>
@@ -3403,8 +3427,8 @@ function openSubmitModal() {
 }
 
 async function submitPaper() {
-  const title    = document.getElementById('paper-title-input').value.trim();
-  const abstract = document.getElementById('paper-abstract-input').value.trim();
+  const title     = document.getElementById('paper-title-input').value.trim();
+  const abstract  = document.getElementById('paper-abstract-input').value.trim();
   const fileInput = document.getElementById('paper-file-input');
   const file      = fileInput?.files?.[0];
   if (!title) { showToast('Please enter a title'); return; }
@@ -3413,15 +3437,26 @@ async function submitPaper() {
   const btn = document.querySelector('#submit-paper-modal .btn-primary');
   if (btn) btn.textContent = 'Submitting…';
 
-  // Read file as data URL so it can be opened directly
-  let fileDataUrl = null;
+  let filePayload = null;
+  let fileName = null;
   if (file) {
-    fileDataUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload  = e => resolve(e.target.result);
-      reader.onerror = () => reject(new Error('File read failed'));
-      reader.readAsDataURL(file);
-    }).catch(e => { showToast('File error: ' + e.message); return null; });
+    fileName = file.name;
+    const isHtml = file.name.match(/\.html?$/i) || file.type.includes('html');
+    if (isHtml) {
+      // Store HTML as plain text — most reliable for opening
+      filePayload = await new Promise(res => {
+        const r = new FileReader();
+        r.onload = e => res('html::' + e.target.result);
+        r.readAsText(file);
+      });
+    } else {
+      // Store other files as base64 data URL
+      filePayload = await new Promise(res => {
+        const r = new FileReader();
+        r.onload = e => res(e.target.result);
+        r.readAsDataURL(file);
+      });
+    }
   }
 
   const { error } = await sb.from('papers').insert({
@@ -3431,7 +3466,8 @@ async function submitPaper() {
     place:       currentUser.place || '—',
     status:      'pending',
     points:      0,
-    file_url:    fileDataUrl,
+    file_url:    filePayload,
+    file_name:   fileName,
   });
   if (btn) btn.textContent = 'Submit for Review ✦';
   if (error) { showToast('Error: ' + error.message); return; }
