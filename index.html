@@ -2415,7 +2415,11 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
     storage: window.localStorage,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-  }
+    flowType: 'implicit',
+  },
+  global: {
+    fetch: (...args) => fetch(...args),
+  },
 });
 
 // ─── expose needed functions to global scope (onclick= handlers) ───
@@ -3369,10 +3373,25 @@ function openSubmitModal() {
 async function submitPaper() {
   const title    = document.getElementById('paper-title-input').value.trim();
   const abstract = document.getElementById('paper-abstract-input').value.trim();
+  const fileInput = document.getElementById('paper-file-input');
+  const file      = fileInput?.files?.[0];
   if (!title) { showToast('Please enter a title'); return; }
   if (!currentUser) { showToast('You must be signed in'); return; }
+
   const btn = document.querySelector('#submit-paper-modal .btn-primary');
   if (btn) btn.textContent = 'Submitting…';
+
+  // Read file as data URL so it can be opened directly
+  let fileDataUrl = null;
+  if (file) {
+    fileDataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = e => resolve(e.target.result);
+      reader.onerror = () => reject(new Error('File read failed'));
+      reader.readAsDataURL(file);
+    }).catch(e => { showToast('File error: ' + e.message); return null; });
+  }
+
   const { error } = await sb.from('papers').insert({
     title, abstract,
     author_id:   currentUser.id,
@@ -3380,12 +3399,14 @@ async function submitPaper() {
     place:       currentUser.place || '—',
     status:      'pending',
     points:      0,
+    file_url:    fileDataUrl,
   });
   if (btn) btn.textContent = 'Submit for Review ✦';
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal('submit-paper-modal');
   document.getElementById('paper-title-input').value = '';
   document.getElementById('paper-abstract-input').value = '';
+  if (fileInput) fileInput.value = '';
   showToast('Paper submitted for review');
   await loadPapers(); renderPapers(); renderAcademicPapers();
 }
