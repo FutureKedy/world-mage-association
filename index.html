@@ -2213,6 +2213,40 @@ html, body {
 </div>
 
 
+<!-- ═══════════════════════ MAGE PROFILE OVERLAY ═══════════════════════ -->
+<div id="mage-profile-overlay" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(20,12,4,0.78);backdrop-filter:blur(3px);overflow-y:auto">
+  <div style="max-width:860px;margin:2rem auto;padding:0 1rem 3rem">
+    <div style="text-align:right;margin-bottom:0.8rem">
+      <button onclick="closeMageProfile()" style="font-family:var(--font-display);font-size:0.6rem;letter-spacing:0.15em;color:rgba(240,200,100,0.75);background:transparent;border:1px solid rgba(240,200,100,0.3);padding:0.3rem 0.9rem;border-radius:3px;cursor:pointer;text-transform:uppercase">✕ Close</button>
+    </div>
+    <div style="background:linear-gradient(160deg,#f5f0e0,#ede5c8);border:2px solid #a67c2e;border-radius:8px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.6)">
+      <!-- Header -->
+      <div style="background:linear-gradient(180deg,#2e1f0a,#3d5c30);padding:2rem;text-align:center;position:relative">
+        <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#5c7a45,#3d5c30);border:3px solid #a67c2e;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1.8rem;color:#dbb84a;margin:0 auto 1rem">
+          <span id="mp-initial">?</span>
+        </div>
+        <div id="mp-name" style="font-family:var(--font-display);font-size:1.1rem;letter-spacing:0.2em;color:#dbb84a;margin-bottom:0.3rem">—</div>
+        <div id="mp-rank" style="font-family:var(--font-italic);font-style:italic;font-size:0.9rem;color:rgba(240,220,160,0.8)">—</div>
+        <div id="mp-place" style="font-family:var(--font-display);font-size:0.55rem;letter-spacing:0.15em;color:rgba(200,180,120,0.6);margin-top:0.3rem">—</div>
+      </div>
+      <!-- Content -->
+      <div style="padding:1.5rem 2rem">
+        <!-- Papers -->
+        <div style="font-family:var(--font-display);font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:0.8rem">Academic Papers</div>
+        <div id="mp-papers" style="margin-bottom:1.5rem;display:flex;flex-direction:column;gap:0.5rem">
+          <div style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);font-size:0.88rem">No papers.</div>
+        </div>
+        <div style="border-top:1px solid var(--cream-border);margin:1rem 0"></div>
+        <!-- Spells -->
+        <div style="font-family:var(--font-display);font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:0.8rem">Spells in the Library</div>
+        <div id="mp-spells" style="display:flex;flex-wrap:wrap;gap:0.6rem">
+          <div style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);font-size:0.88rem">No spells.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════════════ SPELL BOOK VIEW (fullscreen) ═══════════════════════ -->
 <div class="spell-book-view" id="spell-book-view">
   <div class="spell-book-container">
@@ -2455,7 +2489,9 @@ window.requestRankUp      = requestRankUp;
 window.requestPlaceChange = requestPlaceChange;
 window.openSettings       = openSettings;
 window.closeSettings      = closeSettings;
-window.openProfile       = openProfile;
+window.openMageProfile    = openMageProfile;
+window.closeMageProfile   = closeMageProfile;
+window.openPaperById      = openPaperById;
 window.closeProfile      = closeProfile;
 window.approveRank      = approveRank;
 window.rejectRank       = rejectRank;
@@ -3063,7 +3099,25 @@ const SCE = (() => {
     return pal.s;
   }
 
-  return{renderSVG,computeStats,getPaletteColor,parseFormula};
+  // ── static version for library thumbnail (no CSS animations) ──
+  function renderStaticSVG(formula) {
+    const result = renderSVG(formula);
+    if (!result) return null;
+    // Strip animation styles and data-rot attributes, replace with fixed rotation
+    let svg = result.svg
+      .replace(/@keyframes scecw[^}]*\}/g,'')
+      .replace(/@keyframes sceccw[^}]*\}/g,'')
+      .replace(/@keyframes scepulse[^}]*\}/g,'')
+      .replace(/animation:[^";}]+[;}]/g, ';')
+      .replace(/data-rot-spd="[^"]*"/g,'')
+      .replace(/data-rot-dir="[^"]*"/g,'')
+      .replace(/data-rot-ox="[^"]*"/g,'')
+      .replace(/data-rot-oy="[^"]*"/g,'')
+      .replace(/data-layer-z="[^"]*"/g,'');
+    return { svg, pal: result.pal };
+  }
+
+  return{renderSVG,computeStats,getPaletteColor,parseFormula,renderStaticSVG};
 })();
 
 // ═══════════════════════════════════════════════════════
@@ -3553,16 +3607,21 @@ function getBookColors(spell, idx) {
   return FALLBACK_PALETTES[idx % FALLBACK_PALETTES.length];
 }
 
+const _spineColorCache = {};
 function buildSpineHTML(s, globalIdx, floorId) {
-  // Auto-detect color from formula if available, else use stored circle_color, else palette
   let c1, c2;
-  if (s.circle_code && s.circle_code.trim()) {
-    const autoColor = SCE.getPaletteColor(s.circle_code.trim());
-    if (autoColor) { c1 = autoColor; c2 = shadeColor(autoColor, -40); }
-  }
-  if (!c1) {
-    if (s.circle_color) { c1 = s.circle_color; c2 = shadeColor(s.circle_color, -40); }
-    else { [c1, c2] = getBookColors(s, globalIdx); }
+  if (!_spineColorCache[s.id]) {
+    if (s.circle_code && s.circle_code.trim()) {
+      const autoColor = SCE.getPaletteColor(s.circle_code.trim());
+      if (autoColor) { c1 = autoColor; c2 = shadeColor(autoColor, -40); }
+    }
+    if (!c1) {
+      if (s.circle_color) { c1 = s.circle_color; c2 = shadeColor(s.circle_color, -40); }
+      else { [c1, c2] = getBookColors(s, globalIdx); }
+    }
+    _spineColorCache[s.id] = [c1, c2];
+  } else {
+    [c1, c2] = _spineColorCache[s.id];
   }
   const w = SPELL_BOOK_W[globalIdx % SPELL_BOOK_W.length];
   const h = SPELL_BOOK_H[globalIdx % SPELL_BOOK_H.length];
@@ -3709,10 +3768,10 @@ function openSpellBook(floorId, spellId) {
   const frame = document.getElementById('book-circle-frame');
   let accentColor = spell.circle_color || '#7a9dbb';
   if (spell.circle_code && spell.circle_code.trim()) {
-    const result = SCE.renderSVG(spell.circle_code.trim());
+    const result = SCE.renderStaticSVG(spell.circle_code.trim());
     if (result) {
       frame.innerHTML = result.svg;
-      accentColor = result.pal.s; // use actual computed palette colour
+      accentColor = result.pal.s;
     } else {
       frame.innerHTML = `<div class="spell-circle-placeholder" style="color:${accentColor}">⬡<br><br>Invalid formula.</div>`;
     }
@@ -3771,6 +3830,9 @@ async function deleteSpell(spellId, floorId) {
 function closeSpellBook() {
   document.getElementById('spell-book-view').classList.remove('open');
   document.body.style.overflow = '';
+  // Clear SVG to free memory
+  const frame = document.getElementById('book-circle-frame');
+  if (frame) frame.innerHTML = '';
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3822,7 +3884,7 @@ function renderMages() {
   if (!grid) return;
   if (!list.length) { grid.innerHTML = `<div style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);padding:2rem">No mages found.</div>`; return; }
   grid.innerHTML = list.map(m => `
-    <div class="mage-card">
+    <div class="mage-card" onclick="openMageProfile('${m.id}')" style="cursor:pointer">
       <div class="mage-avatar">${(m.name||'?')[0].toUpperCase()}</div>
       <div class="mage-card-info">
         <div class="mage-card-name">${m.name}</div>
@@ -4397,6 +4459,87 @@ async function requestPlaceChange() {
   populateSettings();
   renderLoggedIn();
 }
+
+// ═══════════════════════════════════════════════════════
+//  MAGE PROFILE OVERLAY
+// ═══════════════════════════════════════════════════════
+async function openMageProfile(uid) {
+  const overlay = document.getElementById('mage-profile-overlay');
+  if (!overlay) return;
+  overlay.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+
+  // Get mage data from cache first
+  const mage = cachedMages.find(m => m.id === uid);
+  if (!mage) return;
+
+  document.getElementById('mp-initial').textContent = (mage.name||'?')[0].toUpperCase();
+  document.getElementById('mp-name').textContent    = mage.name || '—';
+  document.getElementById('mp-rank').textContent    = mage.rank || '—';
+  document.getElementById('mp-place').textContent   = mage.place ? '⌖ ' + mage.place : 'Unaffiliated';
+
+  // Load their papers
+  const papersEl = document.getElementById('mp-papers');
+  papersEl.innerHTML = `<div style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);font-size:0.82rem">Loading…</div>`;
+  const { data: papers } = await sb.from('papers')
+    .select('id, title, status, points, file_url')
+    .eq('author_id', uid)
+    .order('created_at', { ascending: false });
+  if (!papers?.length) {
+    papersEl.innerHTML = `<div style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);font-size:0.88rem">No papers submitted.</div>`;
+  } else {
+    papersEl.innerHTML = papers.map(p => {
+      const hasFile = p.file_url && p.file_url.trim();
+      const isPending = p.status !== 'reviewed';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.7rem;background:var(--parchment-dark);border:1px solid var(--cream-border);border-radius:4px;gap:0.8rem">
+        <div>
+          <div style="font-family:var(--font-display);font-size:0.65rem;letter-spacing:0.06em;color:var(--green-deep);${hasFile?'cursor:pointer;text-decoration:underline;text-underline-offset:2px':''}" ${hasFile?`onclick="openPaperById('${p.id}')"`:''}>${p.title}${hasFile?' ↗':''}</div>
+          <div style="font-size:0.6rem;color:var(--ink-light);margin-top:2px">${isPending?'⏳ Pending':'✓ Peer Reviewed'} · ${(p.points||0).toLocaleString()} pts</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Load their spells
+  const spellsEl = document.getElementById('mp-spells');
+  spellsEl.innerHTML = `<div style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);font-size:0.82rem">Loading…</div>`;
+  const allSpells = Object.values(cachedSpells).flat();
+  const mySpells  = allSpells.filter(s => s.author_id === uid);
+  if (!mySpells.length) {
+    spellsEl.innerHTML = `<div style="font-family:var(--font-italic);font-style:italic;color:var(--ink-light);font-size:0.88rem">No spells in the library.</div>`;
+  } else {
+    spellsEl.innerHTML = mySpells.map(s => {
+      const color = (s.circle_code ? SCE.getPaletteColor(s.circle_code) : null) || s.circle_color || '#7a9dbb';
+      const c2 = shadeColor(color, -40);
+      return `<div onclick="closeMageProfile();openSpellBook(${s.floor},'${s.id}')"
+        style="cursor:pointer;background:linear-gradient(175deg,${color},${c2});border-radius:3px;padding:0.5rem 0.7rem;min-width:100px;max-width:160px;font-family:var(--font-display);font-size:0.55rem;letter-spacing:0.1em;color:#f0f0e0;text-shadow:0 1px 4px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.15)">
+        ${s.name}<br><span style="opacity:0.65;font-size:0.48rem">${FLOORS[s.floor-1]?.tier||''}</span>
+      </div>`;
+    }).join('');
+  }
+}
+
+// open a paper by id from mage profile (paper data may not be in cachedPapers)
+async function openPaperById(id) {
+  // check cache first
+  let paper = cachedPapers.find(p => p.id === id);
+  if (!paper) {
+    const { data } = await sb.from('papers').select('*').eq('id', id).single();
+    paper = data;
+  }
+  if (!paper) { showToast('Paper not found'); return; }
+  if (!paper.file_url) { showToast('No file attached'); return; }
+  // Temporarily add to cache so openPaper can find it
+  if (!cachedPapers.find(p => p.id === id)) cachedPapers.push(paper);
+  openPaper(id);
+}
+
+function closeMageProfile() {
+  const overlay = document.getElementById('mage-profile-overlay');
+  if (overlay) overlay.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
 
 function showToast(msg) {
   const t = document.getElementById('toast');
